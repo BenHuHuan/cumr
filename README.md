@@ -1,6 +1,6 @@
 # Re_UMR: Contact-Stabilized Unified Motion Retargeting
 
-**Re_UMR** is Huan Hu's extension of [UMR](https://github.com/hanyang9/UMR),
+**Re_UMR** is one of extension of [UMR](https://github.com/hanyang9/UMR),
 adding stance-foot stabilization, static terrain contact, reproducible contact
 measurements, and TienKung 2 Dex / 2 Pro / 3 robot adapters.
 The original learned surface correspondence and retargeting framework is by
