@@ -1,0 +1,27 @@
+name: Contact and robot validation
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install CPU validation dependencies
+        run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.4.1
+          python -m pip install 'numpy==1.26.4' 'mujoco==3.3.7' scipy trimesh smplx clarabel joblib tqdm
+      - name: Contact and robot regression tests
+        run: python -m unittest discover -s tests -v
+      - name: Replay published evidence without SMPL-X weights
+        run: python scripts/reproduce_contact_validation.py

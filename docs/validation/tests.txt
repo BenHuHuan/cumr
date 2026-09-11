@@ -1,0 +1,25 @@
+test_contact_projection_reduces_drift_with_joint_and_floor_constraints (test_contact_stabilization.ConstrainedSolverTests.test_contact_projection_reduces_drift_with_joint_and_floor_constraints) ... ok
+test_bad_configuration_fails_early (test_contact_stabilization.ContactDetectionTests.test_bad_configuration_fails_early) ... ok
+test_empty_and_single_frame_do_not_invent_support (test_contact_stabilization.ContactDetectionTests.test_empty_and_single_frame_do_not_invent_support) ... ok
+test_fast_low_foot_and_slow_airborne_foot_are_not_locked (test_contact_stabilization.ContactDetectionTests.test_fast_low_foot_and_slow_airborne_foot_are_not_locked) ... ok
+test_fps_and_stride_have_same_speed_units (test_contact_stabilization.ContactDetectionTests.test_fps_and_stride_have_same_speed_units) ... ok
+test_height_filter_holds_correction_during_flight (test_contact_stabilization.ContactDetectionTests.test_height_filter_holds_correction_during_flight) ... ok
+test_hysteresis_short_contact_and_liftoff (test_contact_stabilization.ContactDetectionTests.test_hysteresis_short_contact_and_liftoff) ... ok
+test_interval_targets_are_fixed_and_released (test_contact_stabilization.ContactDetectionTests.test_interval_targets_are_fixed_and_released) ... ok
+test_native_z_up_and_smpl_y_up_select_same_sole (test_contact_stabilization.ContactDetectionTests.test_native_z_up_and_smpl_y_up_select_same_sole) ... ok
+test_robot_targets_preserve_width_and_stay_fixed (test_contact_stabilization.ContactDetectionTests.test_robot_targets_preserve_width_and_stay_fixed) ... ok
+test_signature_tracks_terrain_content_and_explicit_disable (test_contact_stabilization.ContactDetectionTests.test_signature_tracks_terrain_content_and_explicit_disable) ... ok
+test_toe_can_pivot_while_heel_lifts (test_contact_stabilization.ContactDetectionTests.test_toe_can_pivot_while_heel_lifts) ... ok
+test_window_does_not_cancel_oscillation (test_contact_stabilization.ContactDetectionTests.test_window_does_not_cancel_oscillation) ... ok
+test_heightfield_and_saved_scene_agree (test_contact_stabilization.TerrainTests.test_heightfield_and_saved_scene_agree) ... ok
+test_slope_height_and_constraint_gradient (test_contact_stabilization.TerrainTests.test_slope_height_and_constraint_gradient) ... ok
+test_articulated_kinematics_match_urdf (test_tienkung_models.TienKungModelsTest.test_articulated_kinematics_match_urdf) ... ok
+test_floating_root_joint_limits_and_pelvis_mass (test_tienkung_models.TienKungModelsTest.test_floating_root_joint_limits_and_pelvis_mass) ... ok
+test_oversized_mesh_conversion_preserves_triangles (test_tienkung_models.TienKungModelsTest.test_oversized_mesh_conversion_preserves_triangles) ... ok
+test_tpose_ground_and_correspondence_center (test_tienkung_models.TienKungModelsTest.test_tpose_ground_and_correspondence_center) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 7.389s
+
+OK
+[HumanoidRetarget] body_segment_module=retarget_body_segment_surface schema=smplx_55_to_19_upper_arm_v1 segments=19

@@ -1,0 +1,251 @@
+{
+  "smplx_model_dir": "smpl",
+  "soma_usd_path": "sample_data/soma/soma_base_skel_minimal.usd",
+  "smpl_template": {
+    "source": "motion",
+    "type": "smplx",
+    "use_betas": true,
+    "use_gender": true,
+    "name": "auto",
+    "betas": null,
+    "soma_usd_path": "sample_data/soma/soma_base_skel_minimal.usd"
+  },
+  "robot": {
+    "visual_geom_policy": "auto",
+    "to_smpl_frame": true,
+    "sample_pose": "tpose",
+    "frame_transform": {
+      "smpl_to_robot_root_matrix": [
+        [
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ]
+      ]
+    },
+    "name": "unitree_g1",
+    "xml": "assets/g1/g1_29dof.xml",
+    "point_cloud_center": "body:waist_yaw_link",
+    "tpose_qpos": {
+      "left_shoulder_roll_joint": 1.57079632679,
+      "left_elbow_joint": 1.57079632679,
+      "right_shoulder_roll_joint": -1.57079632679,
+      "right_elbow_joint": 1.57079632679
+    },
+    "joint_limits": {
+      "left_knee_joint": [
+        0.1,
+        "inf"
+      ],
+      "right_knee_joint": [
+        0.1,
+        "inf"
+      ],
+      "left_wrist_pitch_joint": [
+        -0.3,
+        0.8
+      ],
+      "right_wrist_pitch_joint": [
+        -0.3,
+        0.8
+      ],
+      "left_elbow_joint": [
+        "-inf",
+        1.57079632679
+      ],
+      "right_elbow_joint": [
+        "-inf",
+        1.57079632679
+      ],
+      "left_shoulder_pitch_joint": [
+        -3.0,
+        1.4
+      ],
+      "right_shoulder_pitch_joint": [
+        -3.0,
+        1.4
+      ]
+    }
+  },
+  "correspondence": {
+    "slots_field": "reconstructed_slots",
+    "smpl_name": "auto",
+    "dataset": {
+      "num_points": 4096,
+      "seed": 0,
+      "smpl_center": "spine1",
+      "surface_oversample_ratio": 8,
+      "surface_curvature_weight": 0.0,
+      "surface_curvature_power": 1.0,
+      "exterior_surface": true,
+      "exterior_method": "first_hit",
+      "exterior_occlusion_distance": 0.12,
+      "exterior_ray_distance": 0.0,
+      "smpl_models": [
+        {
+          "type": "smplx",
+          "dir": "smpl",
+          "genders": [
+            "neutral"
+          ]
+        }
+      ]
+    },
+    "train": {
+      "template_name": "auto",
+      "template_sort": "y_z_x",
+      "normalize": "per_sample_height",
+      "epochs": 500,
+      "batch_size": 2,
+      "device": "cpu",
+      "lr": 0.001,
+      "lr_scheduler": "cosine",
+      "min_lr": 1e-05,
+      "chamfer_weight": 1.0,
+      "repulsion_weight": 0.002,
+      "repulsion_k": 8,
+      "repulsion_radius": 0.035,
+      "residual_weight": 0.0,
+      "edge_weight": 0.4,
+      "edge_graph": "geodesic",
+      "edge_k": 32,
+      "log_every": 100,
+      "save_every": 1000
+    }
+  },
+  "motion": {
+    "data": "sample_data/lafan1_smplx",
+    "seq_key": "dance1_subject2",
+    "seq_index": 0,
+    "start": 300,
+    "end": -1,
+    "stride": 1,
+    "max_frames": 300
+  },
+  "solver": {
+    "contact_stabilization": {
+      "enabled": false,
+      "height_enter": 0.035,
+      "height_exit": 0.055,
+      "speed_enter": 0.18,
+      "speed_exit": 0.3,
+      "speed_window_seconds": 0.067,
+      "min_contact_seconds": 0.067,
+      "blend_seconds": 0.067,
+      "points_per_foot": 6,
+      "position_cost": 10000.0,
+      "height_adaptation": false,
+      "height_filter_seconds": 0.1,
+      "height_max_correction": 0.05,
+      "projection_iters": 8,
+      "projection_pose_cost": 1.0,
+      "projection_velocity_cost": 500.0,
+      "tolerance": 0.003
+    },
+    "surface_normal_cost_mode": "tpose_offset",
+    "body_segment": {
+      "schema": "smplx_55_to_19_upper_arm_v1",
+      "upper_arm_split": {
+        "ratio_start": 0.0,
+        "ratio_end": 0.3
+      }
+    },
+    "ground_contact_map_cost": 10.0,
+    "ground_contact_anchor_cost": 5.0,
+    "ground_contact_map_threshold": 0.1,
+    "ground_contact_map_snap_threshold": 0.005,
+    "ground_contact_map_max_points": 128,
+    "ground_penetration_hard_constraint": true,
+    "ground_penetration_hard_constraint_mode": "surface_slots_all",
+    "ground_penetration_margin": 0.0,
+    "ground_penetration_hard_slack": false,
+    "ground_penetration_hard_slack_cost": 1000.0,
+    "ground_penetration_threshold": 0.05,
+    "ground_penetration_max_points": 128,
+    "self_contact_map_cost": 500.0,
+    "self_contact_map_mode": [
+      "threshold_global_topk",
+      "source_clearance_body_pair_topk"
+    ],
+    "self_contact_map_threshold": 0.1,
+    "self_contact_map_max_pairs": 256,
+    "self_contact_map_body_topk": {
+      "default": 1
+    },
+    "smooth_cost": 1.0,
+    "temporal_smooth_cost": 0.5,
+    "trajectory_filter_mode": "lqr",
+    "trajectory_filter_data_cost": 1.0,
+    "trajectory_filter_velocity_cost": 0.0,
+    "trajectory_filter_acceleration_cost": 0.1,
+    "trajectory_filter_jerk_cost": 0.01,
+    "trajectory_filter_root_translation": true,
+    "trajectory_filter_anchor_start_frames": 1,
+    "trajectory_filter_anchor_end_frames": 1,
+    "trajectory_warm_start_mode": "sequential",
+    "trajectory_warm_start_bidirectional_continuity_cost": 0.1,
+    "trajectory_warm_start_bidirectional_switch_cost": 0.01,
+    "damping": 0.01,
+    "collision_threshold": 0.1,
+    "robot_self_penetration_cost": 0.0,
+    "robot_self_penetration_hard_constraint": false,
+    "robot_self_penetration_margin": -0.001,
+    "robot_self_penetration_hard_slack": true,
+    "robot_self_penetration_hard_slack_cost": 1000.0,
+    "iters": 1,
+    "pose_init_iters": 15,
+    "step_limit_mode": "l2",
+    "max_dq": 0.15,
+    "global_step_size": 0.4,
+    "root_step_limit_mode": "off",
+    "root_max_translation_dq": 0.3,
+    "root_max_rotation_dq": 0.5,
+    "root_global_translation_step_size": 0.3,
+    "root_global_rotation_step_size": 0.5,
+    "seed": 0,
+    "batch_size": 32,
+    "bind_nearest_vertex_k": 24,
+    "project_robot_slots": true
+  },
+  "retarget": {
+    "human_height": 0.0,
+    "mat_height": 0.0,
+    "source_ground_align": "none",
+    "zero_source_finger_pose": true,
+    "smplx_device": "cpu",
+    "smplx_batch_size": 32,
+    "smplx_batch_size_max": 10000,
+    "smplx_batch_size_safety_factor": 0.8,
+    "out": "output/contact_validation/g1_dance_baseline.npz"
+  },
+  "view": {
+    "enabled": false,
+    "play": true,
+    "rate_limit": true,
+    "extra_args": {
+      "viewer_backend": "glfw-ui",
+      "ghost_trail": false,
+      "ghost_interval": 1.0,
+      "show_left_ui": false,
+      "show_right_ui": false,
+      "show_source_slots": false,
+      "source_slot_offset": [
+        -2.0,
+        0.0,
+        0.0
+      ],
+      "show_robot_slots": false,
+      "show_ground_contact_map": false
+    }
+  }
+}

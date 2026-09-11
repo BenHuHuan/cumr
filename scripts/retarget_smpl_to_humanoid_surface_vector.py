@@ -35,6 +35,11 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 import smpl_surface_retarget_common as common  # noqa: E402
+from contact_stabilization import (  # noqa: E402
+    ContactSettings, build_contact_plan, select_support_probes, contact_metrics, contact_signature,
+    rebase_contact_targets,
+)
+from contact_terrain import ContactTerrain  # noqa: E402
 from humanoid_retarget_config import load_config, resolve_path, robot_config, section  # noqa: E402
 from mujoco_geom_surface import geom_local_mesh, surface_geom_ids  # noqa: E402
 from mujoco_point_cloud_center import point_cloud_center_frame  # noqa: E402
@@ -1551,7 +1556,7 @@ def compute_robot_object_penetration_rows(qpos, object_pose_wxyz, cache, margin,
     return jacobians, distances
 
 
-def update_ground_contact_anchors(model, data, qpos, robot_template, active_slot_ids, anchor_state):
+def update_ground_contact_anchors(model, data, qpos, robot_template, active_slot_ids, anchor_state, terrain=None):
     active_slot_ids = np.asarray(active_slot_ids, dtype=np.int32).reshape(-1)
     active_set = {int(slot_id) for slot_id in active_slot_ids}
     for slot_id in list(anchor_state):
@@ -1566,7 +1571,8 @@ def update_ground_contact_anchors(model, data, qpos, robot_template, active_slot
     common.set_qpos(model, data, qpos)
     new_points = common.template_points_to_world(data, robot_template, new_slot_ids)
     for slot_id, point in zip(new_slot_ids, new_points):
-        target = np.asarray([point[0], point[1], 0.0], dtype=np.float64)
+        height = 0.0 if terrain is None else float(terrain.heights(point[:2]))
+        target = np.asarray([point[0], point[1], height], dtype=np.float64)
         anchor_state[int(slot_id)] = target
 
 
@@ -1597,6 +1603,11 @@ def solve_frame_body_segment_qp(
     ground_penetration_collision_cache=None,
     robot_object_penetration_cache=None,
     ground_contact_anchor_state=None,
+    contact_frame=None,
+    contact_settings=None,
+    terrain=None,
+    qpos_reference=None,
+    correction_reference=None,
 ):
     qpos = qpos_init.copy()
     costs = []
@@ -1641,6 +1652,10 @@ def solve_frame_body_segment_qp(
             rank_distances=weight_distances_for_contact,
             candidate_slot_ids=selected_slot_ids,
         )
+        # The stance detector owns these feet, including their swing phases.
+        # A legacy height-only anchor must not re-lock a fast, low swinging foot.
+        if contact_settings is not None and contact_settings.enabled:
+            anchor_active = np.setdiff1d(anchor_active, getattr(args, "contact_managed_slots", []))
     update_ground_contact_anchors(
         model,
         data,
@@ -1648,6 +1663,7 @@ def solve_frame_body_segment_qp(
         robot_template,
         anchor_active,
         ground_contact_anchor_state,
+        terrain=terrain,
     )
 
     selected_slot_ids = np.asarray(selected_slot_ids, dtype=np.int32).reshape(-1)
@@ -1809,9 +1825,14 @@ def solve_frame_body_segment_qp(
             if ground_active.size > 0:
                 ground_points = slot_cache.points(ground_active)
                 errors = ground_points[:, 2] - ground_target_z
+                ground_normals = None
+                if terrain is not None:
+                    ground_heights, ground_normals = terrain.sample(ground_points)
+                    errors -= ground_heights
                 for row, (point, slot_id) in enumerate(zip(ground_points, ground_active)):
                     jac = slot_cache.point_jacobian(int(slot_id))
-                    rows.append(ground_row_costs[row] * jac[2:3])
+                    height_jac = jac[2:3] if ground_normals is None else (ground_normals[row] @ jac / ground_normals[row, 2])[None, :]
+                    rows.append(ground_row_costs[row] * height_jac)
                     residuals.append(np.asarray([ground_row_costs[row] * errors[row]], dtype=np.float64))
 
         if (
@@ -1827,6 +1848,26 @@ def solve_frame_body_segment_qp(
                 jac = slot_cache.point_jacobian(int(slot_id))
                 rows.append(anchor_row_costs[row] * jac)
                 residuals.append(anchor_row_costs[row] * (point - target))
+
+        if contact_frame is not None:
+            for slot_id, target, weight in zip(contact_frame["slot_ids"], contact_frame["targets"], contact_frame["weights"]):
+                scale = np.sqrt(contact_settings.position_cost * weight)
+                rows.append(scale * slot_cache.point_jacobian(int(slot_id)))
+                residuals.append(scale * (slot_cache.point(int(slot_id)) - target))
+
+        if qpos_reference is not None:
+            pose_error = np.zeros(model.nv)
+            mujoco.mj_differentiatePos(model, pose_error, 1.0, qpos_reference, qpos)
+            scale = np.sqrt(contact_settings.projection_pose_cost)
+            rows.append(scale * np.eye(model.nv))
+            residuals.append(scale * pose_error)
+
+        if correction_reference is not None and contact_settings.projection_velocity_cost > 0:
+            correction_error = np.zeros(model.nv)
+            mujoco.mj_differentiatePos(model, correction_error, 1.0, correction_reference, qpos)
+            scale = np.sqrt(contact_settings.projection_velocity_cost)
+            rows.append(scale * np.eye(model.nv))
+            residuals.append(scale * correction_error)
 
         if (
             float(args.object_contact_map_cost) > 0.0
@@ -1999,6 +2040,8 @@ def solve_frame_body_segment_qp(
             else:
                 candidate_slot_ids = np.asarray(selected_slot_ids, dtype=np.int32)
             candidate_z = common.template_points_world_z(data, robot_template, candidate_slot_ids)
+            if terrain is not None:
+                candidate_z = terrain.clearance(slot_cache.points(candidate_slot_ids))
             constraint_slot_ids, constraint_z = ground_penetration_constraint_slots(
                 candidate_z,
                 candidate_slot_ids,
@@ -2015,7 +2058,11 @@ def solve_frame_body_segment_qp(
                 )
                 for point_z, slot_id in zip(constraint_z, constraint_slot_ids):
                     jac = slot_cache.point_jacobian(int(slot_id))
-                    ineq_rows.append(-jac[2])
+                    height_jac = jac[2]
+                    if terrain is not None:
+                        _height, normal = terrain.sample(slot_cache.point(int(slot_id)))
+                        height_jac = normal @ jac / normal[2]
+                    ineq_rows.append(-height_jac)
                     ineq_bounds.append(float(point_z) - floor_z)
                     ineq_soft_costs.append(ground_slack_cost)
         elif bool(args.ground_penetration_hard_constraint) and ground_mode == "mujoco_collision":
@@ -2082,8 +2129,96 @@ def solve_frame_body_segment_qp(
     return qpos, costs[-1] if costs else 0.0
 
 
+def finalize_contact_motion(
+    args, model, data_mj, qpos_seq, plan, settings, terrain, robot_template,
+    selected_slot_ids, source_slot_part_ids, point_slot_costs, normal_slot_costs,
+    joint_qpos_addrs, joint_dof_addrs, joint_limits_by_qpos,
+    robot_self_penetration_cache, ground_penetration_collision_cache,
+    fps, frame_ids, frame_terms=None,
+):
+    """Reproject after smoothing/DP with the same collision and joint constraints."""
+    config = section(section(args.config_data, "solver"), "contact_stabilization")
+    signature = contact_signature(config, lambda value: resolve_path(value, args.config_data))
+    report_path = args.out.with_suffix(".contact.json")
+    if plan is None or not len(plan.slot_ids):
+        report_path.write_text(json.dumps({"settings": config, "signature": signature,
+            "status": "disabled" if not settings.enabled else "no_foot_probes"}, indent=2) + "\n")
+        args.out.with_suffix(".contact.npz").unlink(missing_ok=True)
+        return qpos_seq
+
+    def contact_fk(sequence):
+        points = []
+        for q in sequence:
+            common.set_qpos(model, data_mj, q)
+            points.append(common.template_points_to_world(data_mj, robot_template, plan.slot_ids))
+        return np.asarray(points)
+
+    before_points = contact_fk(qpos_seq)
+    source_targets = plan.targets.copy()
+    rebase_contact_targets(plan, before_points, terrain)
+    before = contact_metrics(before_points, plan, fps, terrain)
+    all_ids = np.arange(len(robot_template["geom_ids"]), dtype=np.int32)
+    result = qpos_seq.copy()
+    if settings.projection_iters > 0:
+        for index in tqdm(range(len(frame_ids)), desc="[HumanoidRetarget] contact projection"):
+            reference = qpos_seq[index].astype(np.float64)
+            common.set_qpos(model, data_mj, reference)
+            cache = common.TemplateSlotKinematicsCache(model, data_mj, robot_template)
+            correction_reference = None
+            if index > 0:
+                reference_step = np.zeros(model.nv)
+                mujoco.mj_differentiatePos(model, reference_step, 1.0, qpos_seq[index - 1], reference)
+                correction_reference = result[index - 1].astype(np.float64).copy()
+                mujoco.mj_integratePos(model, correction_reference, reference_step, 1.0)
+            terms = {} if frame_terms is None else frame_terms(index)
+            corrected, _ = solve_frame_body_segment_qp(
+                model, data_mj, reference, None, None,
+                cache.points(all_ids), cache.normals(all_ids), cache.normals(all_ids),
+                selected_slot_ids, source_slot_part_ids, point_slot_costs, normal_slot_costs,
+                terms.get("source_self_contact_map"), None, None,
+                terms.get("object_contact_frame"), robot_template,
+                joint_qpos_addrs, joint_dof_addrs, args,
+                iters=settings.projection_iters, joint_limits_by_qpos=joint_limits_by_qpos,
+                robot_self_penetration_cache=robot_self_penetration_cache,
+                ground_penetration_collision_cache=ground_penetration_collision_cache,
+                robot_object_penetration_cache=terms.get("robot_object_penetration_cache"),
+                contact_frame=plan.frame(index), contact_settings=settings,
+                terrain=terrain, qpos_reference=reference,
+                correction_reference=correction_reference,
+            )
+            result[index] = corrected
+    after_points = contact_fk(result)
+    after = contact_metrics(after_points, plan, fps, terrain)
+    max_penetration = 0.0
+    for q in result:
+        common.set_qpos(model, data_mj, q)
+        points = common.template_points_to_world(data_mj, robot_template, all_ids)
+        max_penetration = max(max_penetration, float(np.maximum(-terrain.clearance(points), 0).max(initial=0)))
+    after["max_surface_slot_penetration_m"] = max_penetration
+    report = {"settings": config, "signature": signature, "terrain": terrain.config, "fps": fps,
+              "before_projection": before, "after_projection": after, "tolerance_m": settings.tolerance,
+              "support_height_within_tolerance": (after["support_height_p95_m"] is not None
+                  and after["support_height_p95_m"] <= settings.tolerance)}
+    report_path.write_text(json.dumps(report, indent=2) + "\n")
+    np.savez_compressed(args.out.with_suffix(".contact.npz"),
+                        slot_ids=plan.slot_ids, labels=plan.labels, active=plan.active,
+                        targets=plan.targets, weights=plan.weights, source_speeds=plan.speeds,
+                        height_offsets=plan.height_offsets, frame_ids=frame_ids, fps=fps,
+                        before_points=before_points, after_points=after_points, source_targets=source_targets,
+                        probe_geom_ids=robot_template["geom_ids"][plan.slot_ids],
+                        probe_local_pos=robot_template["local_pos"][plan.slot_ids])
+    print(f"[HumanoidRetarget][Stance] before={before} after={after} report={report_path}")
+    return result
+
+
 def main():
     args = parse_args()
+    contact_config = section(section(args.config_data, "solver"), "contact_stabilization")
+    contact_settings = ContactSettings.from_config(contact_config)
+    terrain_config = dict(contact_config.get("terrain") or {})
+    if terrain_config.get("path"):
+        terrain_config["path"] = str(resolve_path(terrain_config["path"], args.config_data))
+    terrain = ContactTerrain(terrain_config)
     if not Path(args.data).exists():
         available = sorted(
             str(path.relative_to(ROOT))
@@ -2303,6 +2438,11 @@ def main():
             source_slots,
             snap_threshold=float(args.ground_contact_map_snap_threshold),
         )
+        if terrain_config:
+            raw_source_ground_contact_distances = terrain.clearance(source_slots)
+            source_ground_contact_distances = np.maximum(raw_source_ground_contact_distances, 0)
+            source_ground_contact_distances[source_ground_contact_distances < args.ground_contact_map_snap_threshold] = 0
+            source_ground_contact_weight_distances = raw_source_ground_contact_distances - raw_source_ground_contact_distances.min(axis=1, keepdims=True)
 
     segment_sample_cfg = segment_sample_counts()
     if is_uniform_source:
@@ -2479,6 +2619,14 @@ def main():
     args.out.parent.mkdir(parents=True, exist_ok=True)
     source_robot_xml = Path(args.robot_xml)
     robot_xml = prepare_robot_xml(args)
+    if terrain_config:
+        # prepare_robot_xml usually resolves mesh paths. Also handle fixed-root
+        # policies before moving the scene to the output directory.
+        tree = ET.parse(robot_xml)
+        absolutize_asset_paths(tree.getroot(), robot_xml)
+        scene_xml = args.out.with_suffix(".terrain.floating_mjcf.xml")
+        tree.write(scene_xml, encoding="unicode")
+        robot_xml = terrain.attach(scene_xml, scene_xml)
     model = mujoco.MjModel.from_xml_path(str(robot_xml))
     data_mj = mujoco.MjData(model)
     robot_self_penetration_cache = common.build_robot_self_penetration_cache(model, args)
@@ -2556,6 +2704,35 @@ def main():
             return
         apply_joint_qpos(_model, _data, robot_sample_qpos, required=False)
         apply_mimic_qpos(_model, _data, robot.get("mimic_qpos", {}) or {})
+
+    contact_plan = None
+    if contact_settings.enabled:
+        if contact_settings.height_adaptation and object_contact_source is not None:
+            raise ValueError("height_adaptation shifts the source body; disable it for object/scene interaction motions")
+        contact_groups = {} if is_uniform_source else body_segment_slot_groups(source_slot_part_ids)
+        mujoco.mj_resetData(model, data_mj)
+        apply_config_sample_pose(model, data_mj)
+        mujoco.mj_forward(model, data_mj)
+        reference_points = common.template_points_to_world(data_mj, robot_template, np.arange(len(robot_slots)))
+        contact_ids, contact_labels = select_support_probes(
+            smpl_slots, reference_points, contact_groups, contact_settings.points_per_foot,
+        )
+        args.contact_managed_slots = np.concatenate([
+            np.asarray(contact_groups.get(name, []), dtype=np.int32) for name in ("leftFoot", "rightFoot")
+        ])
+        contact_plan = build_contact_plan(source_slots, contact_ids, contact_labels, fps, terrain, contact_settings)
+        if contact_settings.height_adaptation:
+            source_slots[:, :, 2] -= contact_plan.height_offsets[:, None]
+            joints_scaled[:, :, 2] -= contact_plan.height_offsets[:, None]
+            if source_ground_contact_distances is not None:
+                raw_source_ground_contact_distances = terrain.clearance(source_slots)
+                source_ground_contact_distances = np.maximum(raw_source_ground_contact_distances, 0)
+                source_ground_contact_distances[source_ground_contact_distances < args.ground_contact_map_snap_threshold] = 0
+                source_ground_contact_weight_distances = raw_source_ground_contact_distances - raw_source_ground_contact_distances.min(axis=1, keepdims=True)
+        print(f"[HumanoidRetarget][Stance] probes={len(contact_ids)} contacts={int(contact_plan.active.sum())} "
+              f"frames={int(contact_plan.active.any(axis=1).sum())}/{len(frame_ids)} terrain={terrain.kind}")
+        if not len(contact_ids):
+            print("[HumanoidRetarget][Stance] No semantic foot probes available; stance locking is inactive for this source.")
 
     surface_normal_cost_mode = str(args.surface_normal_cost_mode)
     tpose_surface_normal_offsets = np.zeros((0, 3), dtype=np.float32)
@@ -2695,6 +2872,9 @@ def main():
                 ground_penetration_collision_cache=ground_penetration_collision_cache,
                 robot_object_penetration_cache=robot_object_penetration_cache,
                 ground_contact_anchor_state=ground_contact_anchor_state,
+                contact_frame=None if contact_plan is None else contact_plan.frame(out_idx),
+                contact_settings=contact_settings,
+                terrain=terrain,
             )
             q_seq[out_idx] = q_opt.astype(np.float32)
             seq_costs[out_idx] = float(cost)
@@ -2805,6 +2985,28 @@ def main():
             f"accel_p95 {raw_summary['accel_p95']:.6g}->{filtered_summary['accel_p95']:.6g} "
             f"jerk_p95 {raw_summary['jerk_p95']:.6g}->{filtered_summary['jerk_p95']:.6g}"
         )
+
+    def projection_terms(index):
+        object_frame = None
+        if object_contact_source is not None:
+            object_frame = {
+                "mode": object_contact_source.get("mode", "world_points"),
+                "distances": object_contact_source["distances"][index],
+                "object_ids": object_contact_source["object_ids"][index],
+                "pair_vectors": object_contact_source["pair_vectors"][index],
+                "object_points": object_contact_source["retarget_points_world"][index],
+                "object_position": object_contact_source["motion_positions"][index],
+                "object_quat_wxyz": object_contact_source["motion_quats_wxyz"][index],
+            }
+        return {"source_self_contact_map": None if source_self_contact_maps is None else source_self_contact_maps[index],
+                "object_contact_frame": object_frame, "robot_object_penetration_cache": robot_object_penetration_cache}
+
+    qpos_seq = finalize_contact_motion(
+        args, model, data_mj, qpos_seq, contact_plan, contact_settings, terrain, robot_template,
+        selected_slot_ids, source_slot_part_ids, point_slot_costs, normal_slot_costs,
+        joint_qpos_addrs, joint_dof_addrs, joint_limits_by_qpos,
+        robot_self_penetration_cache, ground_penetration_collision_cache, fps, frame_ids, projection_terms,
+    )
 
     output_payload = {
         "qpos": qpos_seq,

@@ -1646,6 +1646,18 @@ def load_source_feature_cache(cache_path, *, args, seq_key, frame_ids, template_
 
 def main(argv=None):
     args = parse_args(argv)
+    import retarget_smpl_to_humanoid_surface_vector as contact_base
+    contact_config = section(section(args.config_data, "solver"), "contact_stabilization")
+    contact_settings = contact_base.ContactSettings.from_config(contact_config)
+    terrain_config = dict(contact_config.get("terrain") or {})
+    if terrain_config.get("path"):
+        terrain_config["path"] = str(resolve_path(terrain_config["path"], args.config_data))
+    terrain = contact_base.ContactTerrain(terrain_config)
+    # Batch sources contain no tracked objects, but share the final QP solver.
+    for name, value in {"object_contact_map_cost": 0.0, "object_contact_map_threshold": .1,
+                        "object_contact_map_max_points": 128, "robot_object_penetration_soft_cost": 0.0,
+                        "robot_object_hard_constraint": False}.items():
+        setattr(args, name, value)
     if not Path(args.data).exists():
         available = sorted(
             str(path.relative_to(ROOT))
@@ -1819,6 +1831,12 @@ def main(argv=None):
     args.out.parent.mkdir(parents=True, exist_ok=True)
     source_robot_xml = Path(args.robot_xml)
     robot_xml = prepare_robot_xml(args)
+    if terrain_config:
+        tree = ET.parse(robot_xml)
+        contact_base.absolutize_asset_paths(tree.getroot(), robot_xml)
+        scene_xml = args.out.with_suffix(".terrain.floating_mjcf.xml")
+        tree.write(scene_xml, encoding="unicode")
+        robot_xml = terrain.attach(scene_xml, scene_xml)
     model = mujoco.MjModel.from_xml_path(str(robot_xml))
     data_mj = mujoco.MjData(model)
     robot_self_penetration_cache = common.build_robot_self_penetration_cache(model, args)
@@ -1857,6 +1875,19 @@ def main(argv=None):
             return
         apply_joint_qpos(_model, _data, robot_sample_qpos, required=False)
         apply_mimic_qpos(_model, _data, robot.get("mimic_qpos", {}) or {})
+
+    contact_ids = np.zeros(0, dtype=np.int32)
+    contact_labels = np.asarray([])
+    if contact_settings.enabled:
+        mujoco.mj_resetData(model, data_mj)
+        apply_config_sample_pose(model, data_mj)
+        mujoco.mj_forward(model, data_mj)
+        reference_points = common.template_points_to_world(data_mj, robot_template, np.arange(len(robot_slots)))
+        contact_ids, contact_labels = contact_base.select_support_probes(
+            smpl_slots, reference_points, segment_groups, contact_settings.points_per_foot,
+        )
+    contact_source = np.zeros((len(frame_ids), len(contact_ids), 3), dtype=np.float32)
+    contact_self_maps = [None] * len(frame_ids)
 
     surface_normal_cost_mode = str(args.surface_normal_cost_mode)
     tpose_surface_normal_offsets = np.zeros((0, 3), dtype=np.float32)
@@ -2065,6 +2096,17 @@ def main(argv=None):
                 else:
                     surface_normal_targets = None
 
+            if collect_debug and contact_settings.enabled:
+                contact_source[cache_indices] = source_slots[:, contact_ids]
+                if source_self_contact_maps is not None:
+                    for local_index, frame_index in enumerate(cache_indices):
+                        contact_self_maps[int(frame_index)] = source_self_contact_maps[local_index]
+            if terrain_config and source_ground_contact_distances is not None:
+                raw_source_ground_contact_distances = terrain.clearance(source_slots)
+                source_ground_contact_distances = np.maximum(raw_source_ground_contact_distances, 0)
+                source_ground_contact_distances[source_ground_contact_distances < args.ground_contact_map_snap_threshold] = 0
+                source_ground_contact_weight_distances = raw_source_ground_contact_distances - raw_source_ground_contact_distances.min(axis=1, keepdims=True)
+
             if collect_debug and source_ground_contact_distances is not None:
                 ground_active_counts_all.extend(
                     (
@@ -2084,7 +2126,7 @@ def main(argv=None):
                     q_init = initial_qpos_for_frame(joints_scaled[local_idx])
                 else:
                     q_init = q_prev.copy()
-                q_opt, cost = solve_frame_body_segment_qp(
+                q_opt, cost = contact_base.solve_frame_body_segment_qp(
                     model,
                     data_mj,
                     q_init,
@@ -2100,6 +2142,7 @@ def main(argv=None):
                     None if source_self_contact_maps is None else source_self_contact_maps[local_idx],
                     None if source_ground_contact_distances is None else source_ground_contact_distances[local_idx],
                     None if source_ground_contact_weight_distances is None else source_ground_contact_weight_distances[local_idx],
+                    None,
                     robot_template,
                     joint_qpos_addrs,
                     joint_dof_addrs,
@@ -2109,6 +2152,7 @@ def main(argv=None):
                     robot_self_penetration_cache=robot_self_penetration_cache,
                     ground_penetration_collision_cache=ground_penetration_collision_cache,
                     ground_contact_anchor_state=ground_contact_anchor_state,
+                    terrain=terrain,
                 )
                 q_seq[out_idx] = q_opt.astype(np.float32)
                 seq_costs[out_idx] = float(cost)
@@ -2215,6 +2259,24 @@ def main(argv=None):
             f"{int((ground_anchor_counts > 0).sum())}/{len(ground_anchor_counts)}, "
             f"cost={float(args.ground_contact_anchor_cost):.4f}"
         )
+
+    contact_plan = None
+    if contact_settings.enabled:
+        # Build once over the entire forward trace, not separately per chunk or
+        # per traversal direction; a stance may cross any chunk/DP boundary.
+        contact_plan = contact_base.build_contact_plan(
+            contact_source, np.arange(len(contact_ids)), contact_labels, fps, terrain, contact_settings,
+        )
+        contact_plan.slot_ids = contact_ids
+        if contact_settings.height_adaptation:
+            qpos_seq[:, 2] -= contact_plan.height_offsets
+    qpos_seq = contact_base.finalize_contact_motion(
+        args, model, data_mj, qpos_seq, contact_plan, contact_settings, terrain, robot_template,
+        selected_slot_ids, source_slot_part_ids, point_slot_costs, normal_slot_costs,
+        joint_qpos_addrs, joint_dof_addrs, joint_limits_by_qpos,
+        robot_self_penetration_cache, ground_penetration_collision_cache, fps, frame_ids,
+        lambda index: {"source_self_contact_map": contact_self_maps[index]},
+    )
 
     output_payload = {
         "qpos": qpos_seq,

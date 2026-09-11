@@ -7,6 +7,7 @@ learned slots back onto real surfaces.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import tempfile
@@ -1088,6 +1089,17 @@ SUPPORTED_ROBOT_SAMPLE_SPECS = {
         tpose_qpos=PND_ADAM_LITE_TPOSE_QPOS,
     ),
 }
+# Keep the TienKung canonical pose and center identical in the standalone
+# dataset builder and config-driven pipelines.
+for _name in ("tiangong2dex", "tiangong2pro", "tiangong3"):
+    _path = PROJECT_ROOT / "robot_configs" / f"humanoid_retarget_{_name}_example.json"
+    _robot = json.loads(_path.read_text())["robot"]
+    SUPPORTED_ROBOT_SAMPLE_SPECS[_name] = SupportedRobotSampleSpec(
+        name=_name,
+        xml_path=(_path.parent / _robot["xml"]).resolve(),
+        root_body_name=_robot["point_cloud_center"],
+        tpose_qpos=_robot["tpose_qpos"],
+    )
 SUPPORTED_ROBOT_SAMPLE_NAMES = tuple(SUPPORTED_ROBOT_SAMPLE_SPECS)
 ROBOT_SAMPLE_NAMES.update(SUPPORTED_ROBOT_SAMPLE_NAMES)
 

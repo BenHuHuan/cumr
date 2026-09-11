@@ -19,6 +19,7 @@ for path in (ROOT, SCRIPTS):
         sys.path.insert(0, str(path))
 
 import build_correspondence_ae_dataset as build  # noqa: E402
+from contact_stabilization import contact_signature  # noqa: E402
 from humanoid_retarget_config import list_of_args, load_config, resolve_path, robot_config, section  # noqa: E402
 from humanoid_retarget_pipeline import (  # noqa: E402
     bool_value,
@@ -69,6 +70,9 @@ def load_character_config(path: Path) -> dict[str, Any]:
     defaults = load_config(CHARACTER_DEFAULT_CONFIG, use_default_extends=False)
     override = load_config(path, use_default_extends=False)
     config = deep_merge(defaults, override)
+    if "contact_stabilization" not in section(config, "solver"):
+        base_defaults = load_config(ROOT / "humanoid_retarget_defaults.json", use_default_extends=False)
+        config.setdefault("solver", {})["contact_stabilization"] = section(base_defaults, "solver").get("contact_stabilization", {})
     config["_source_config_path"] = str(Path(path).resolve())
     config["_config_path"] = str(Path(path).resolve())
     config["_config_dir"] = str(Path(path).resolve().parent)
@@ -185,6 +189,9 @@ def absolutize_paths(config: dict[str, Any]) -> dict[str, Any]:
     if corr.get("slots"):
         set_path(config, "correspondence.slots", resolve_project_path(corr.get("slots"), config))
     set_path(config, "retarget.out", character_retarget_out(config))
+    terrain = section(section(section(config, "solver"), "contact_stabilization"), "terrain")
+    if terrain.get("path"):
+        set_path(config, "solver.contact_stabilization.terrain.path", resolve_project_path(terrain["path"], config))
     return config
 
 
@@ -334,6 +341,12 @@ def retarget_character_motion(config: dict[str, Any], runtime_config: Path, slot
         try:
             with np.load(out, allow_pickle=True) as data:
                 compatible = retarget_result_has_final_qpos_only(data)
+            contact_config = section(section(config, "solver"), "contact_stabilization")
+            contact_report = out.with_suffix(".contact.json")
+            if contact_config.get("enabled", False) or contact_config.get("terrain") or contact_report.exists():
+                saved_contact = json.loads(contact_report.read_text())
+                compatible = compatible and saved_contact.get("signature") == contact_signature(
+                    contact_config, lambda value: resolve_project_path(value, config))
         except (OSError, TypeError, ValueError):
             compatible = False
         if compatible:

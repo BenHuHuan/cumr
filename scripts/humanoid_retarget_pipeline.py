@@ -22,6 +22,7 @@ if str(SCRIPTS) not in sys.path:
 
 from humanoid_retarget_config import list_of_args, load_config, resolve_path, robot_config, section  # noqa: E402
 import soma_source  # noqa: E402
+from contact_stabilization import contact_signature  # noqa: E402
 
 
 PYTHON = sys.executable
@@ -200,6 +201,7 @@ def _absolutize_merged_config_paths(
         ("smplx_model_dir",),
         ("soma_usd_path",),
         ("smpl_template", "soma_usd_path"),
+        ("solver", "contact_stabilization", "terrain", "path"),
         ("motion", "data"),
         ("correspondence", "slots"),
         ("correspondence", "dataset", "out"),
@@ -237,6 +239,11 @@ def load_pipeline_config(config_path: Path, defaults_path: Path | None = None) -
     defaults = load_config(Path(defaults_path), use_default_extends=False)
     override = load_config(Path(config_path), use_default_extends=False)
     merged = _deep_merge_config(_clean_config(defaults), _clean_config(override))
+    # The retarget subprocess also inherits the base defaults. Keep contact
+    # settings explicit so cache checks see the same effective configuration.
+    if "contact_stabilization" not in section(merged, "solver"):
+        base_defaults = load_config(ROOT / "humanoid_retarget_defaults.json", use_default_extends=False)
+        merged.setdefault("solver", {})["contact_stabilization"] = section(base_defaults, "solver").get("contact_stabilization", {})
     _absolutize_merged_config_paths(merged, defaults, override)
     merged["_source_config_path"] = str(Path(override["_config_path"]).resolve())
     merged["_defaults_config_path"] = str(Path(defaults["_config_path"]).resolve())
@@ -468,6 +475,17 @@ def retarget_result_compatible(result_path: Path, config: dict[str, Any], quiet=
     result_path = Path(result_path)
     if not result_path.exists():
         return False
+
+    contact_config = section(section(config, "solver"), "contact_stabilization")
+    contact_report = result_path.with_suffix(".contact.json")
+    if contact_config.get("enabled", False) or contact_config.get("terrain") or contact_report.exists():
+        try:
+            saved_contact = json.loads(contact_report.read_text())
+            expected_contact = contact_signature(contact_config, lambda value: resolve_path(value, config))
+            if saved_contact.get("signature") != expected_contact:
+                return False
+        except (OSError, ValueError, KeyError):
+            return False
 
     motion = section(config, "motion")
     expected_source_path = resolve_path(motion.get("data"), config)

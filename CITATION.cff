@@ -1,0 +1,57 @@
+cff-version: 1.2.0
+message: >-
+  Please cite this software and the original UMR paper listed in references.
+  See CITATIONS.bib for both entries and record the commit used in experiments.
+type: software
+title: "Re_UMR: Contact-Stabilized Unified Motion Retargeting"
+authors:
+  - family-names: Hu
+    given-names: Huan
+    alias: BenHuHuan
+    website: https://github.com/BenHuHuan
+date-released: 2026-09-11
+repository-code: https://github.com/BenHuHuan/Re_UMR
+url: https://github.com/BenHuHuan/Re_UMR
+abstract: >-
+  A software extension of UMR with stance-foot stabilization, static terrain
+  contact, reproducible contact diagnostics and TienKung robot adapters.
+keywords:
+  - humanoid robotics
+  - motion retargeting
+  - foot contact
+  - SMPL-X
+references:
+  - type: article
+    title: "Unified Motion Retargeting for Humanoids with Learned Point Cloud Correspondence"
+    authors:
+      - {family-names: Cao, given-names: Hanyang}
+      - {family-names: Fang, given-names: Yuetong}
+      - {family-names: Kwon, given-names: Taesoo}
+      - {family-names: Yu, given-names: Runyi}
+      - {family-names: Ma, given-names: Ji}
+      - {family-names: Tan, given-names: Jing}
+      - {family-names: Zhou, given-names: Yangchen}
+      - {family-names: Du, given-names: Baoze}
+      - {family-names: Gu, given-names: Yi}
+      - {family-names: Gao, given-names: Yukang}
+      - {family-names: Dai, given-names: Ruoli}
+      - {family-names: Han, given-names: Lei}
+      - {family-names: Xu, given-names: Renjing}
+    year: 2026
+    journal: arXiv
+    url: https://arxiv.org/abs/2609.02134
+    identifiers:
+      - type: other
+        value: arXiv:2609.02134
+  - type: software
+    title: robot_retargeter
+    authors:
+      - name: ccrpRepo contributors
+    repository-code: https://github.com/ccrpRepo/robot_retargeter
+    commit: f1418972319287c1b93af0f7a3b445f613cff5e4
+  - type: software
+    title: TienKung_URDF
+    authors:
+      - name: Open-X-Humanoid contributors
+    repository-code: https://github.com/Open-X-Humanoid/TienKung_URDF
+    commit: 5c221783fb92fcc4af891ef1dc0502963caf2266

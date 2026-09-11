@@ -174,6 +174,9 @@ def absolutize_retarget_config(config: dict[str, Any]) -> dict[str, Any]:
     original_robot = robot_config(original)
     robot["xml"] = str(resolve_path(original_robot.get("xml"), original))
     config["robot"] = robot
+    terrain = section(section(section(config, "solver"), "contact_stabilization"), "terrain")
+    if terrain.get("path"):
+        terrain["path"] = str(resolve_path(terrain["path"], original))
     return config
 
 

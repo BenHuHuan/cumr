@@ -409,6 +409,12 @@ def estimate_ground_z_stream(
 
 def main():
     args = parse_args()
+    contact_config = section(section(args.config_data, "solver"), "contact_stabilization")
+    contact_settings = base.ContactSettings.from_config(contact_config)
+    terrain_config = dict(contact_config.get("terrain") or {})
+    if terrain_config.get("path"):
+        terrain_config["path"] = str(resolve_path(terrain_config["path"], args.config_data))
+    terrain = base.ContactTerrain(terrain_config)
     if args.data is None or not Path(args.data).exists():
         raise FileNotFoundError(f"Character motion data not found: {args.data}")
 
@@ -583,6 +589,12 @@ def main():
     args.out.parent.mkdir(parents=True, exist_ok=True)
     source_robot_xml = Path(args.robot_xml)
     robot_xml = base.prepare_robot_xml(args)
+    if terrain_config:
+        tree = base.ET.parse(robot_xml)
+        base.absolutize_asset_paths(tree.getroot(), robot_xml)
+        scene_xml = args.out.with_suffix(".terrain.floating_mjcf.xml")
+        tree.write(scene_xml, encoding="unicode")
+        robot_xml = terrain.attach(scene_xml, scene_xml)
     model = mujoco.MjModel.from_xml_path(str(robot_xml))
     data_mj = mujoco.MjData(model)
     robot_self_penetration_cache = common.build_robot_self_penetration_cache(model, args)
@@ -616,6 +628,24 @@ def main():
             required=False,
         )
         base.apply_mimic_qpos(_model, _data, robot.get("mimic_qpos", {}) or {})
+
+    contact_ids = np.zeros(0, dtype=np.int32)
+    contact_labels = np.asarray([])
+    if contact_settings.enabled:
+        if contact_settings.height_adaptation and object_contact_source is not None:
+            raise ValueError("Disable height_adaptation for object/scene interaction motions")
+        groups = character_body_segment_slot_groups(source_slot_part_ids)
+        foot_groups = {"leftFoot": groups.get("left_foot", []), "rightFoot": groups.get("right_foot", [])}
+        mujoco.mj_resetData(model, data_mj)
+        apply_config_tpose(model, data_mj)
+        mujoco.mj_forward(model, data_mj)
+        reference_points = common.template_points_to_world(data_mj, robot_template, np.arange(len(robot_slots)))
+        contact_ids, contact_labels = base.select_support_probes(
+            source_slots_tpose, reference_points, foot_groups, contact_settings.points_per_foot,
+            source_height_axis=1 if source_to_smpl_frame else 2,
+        )
+    contact_source = np.zeros((len(frame_ids), len(contact_ids), 3), dtype=np.float32)
+    contact_self_maps = [None] * len(frame_ids)
 
     surface_normal_cost_mode = str(args.surface_normal_cost_mode)
     tpose_surface_normal_offsets = np.zeros((0, 3), dtype=np.float32)
@@ -670,6 +700,7 @@ def main():
             source_slots = source_slots.copy()
             source_slots[:, :, 2] -= ground_z
             source_slots *= source_scale
+            contact_source[chunk_start:chunk_end] = source_slots[:, contact_ids]
             source_joints = source_joints_all[chunk_start:chunk_end]
 
             source_ground_contact_distances = None
@@ -695,6 +726,14 @@ def main():
                     max_pairs=int(args.self_contact_map_max_pairs),
                     log_prefix="CharacterRetarget",
                 )
+
+            if source_self_contact_maps is not None:
+                contact_self_maps[chunk_start:chunk_end] = source_self_contact_maps
+            if terrain_config and source_ground_contact_distances is not None:
+                raw_source_ground_contact_distances = terrain.clearance(source_slots)
+                source_ground_contact_distances = np.maximum(raw_source_ground_contact_distances, 0)
+                source_ground_contact_distances[source_ground_contact_distances < args.ground_contact_map_snap_threshold] = 0
+                source_ground_contact_weight_distances = raw_source_ground_contact_distances - raw_source_ground_contact_distances.min(axis=1, keepdims=True)
 
             if surface_normal_cost_mode == "tpose_offset":
                 surface_normal_targets = character_common.character_tpose_normals_to_world_targets(
@@ -752,6 +791,7 @@ def main():
                     ground_penetration_collision_cache=ground_penetration_collision_cache,
                     robot_object_penetration_cache=robot_object_penetration_cache,
                     ground_contact_anchor_state=ground_contact_anchor_state,
+                    terrain=terrain,
                 )
                 qpos_seq[out_idx] = q_opt.astype(np.float32)
                 costs[out_idx] = float(cost)
@@ -759,6 +799,36 @@ def main():
                 q_prev = q_opt
                 progress.update(1)
                 emit_batch_progress(out_idx + 1, len(frame_ids))
+
+    contact_plan = None
+    if contact_settings.enabled:
+        contact_plan = base.build_contact_plan(
+            contact_source, np.arange(len(contact_ids)), contact_labels, fps, terrain, contact_settings,
+        )
+        contact_plan.slot_ids = contact_ids
+        if contact_settings.height_adaptation:
+            qpos_seq[:, 2] -= contact_plan.height_offsets
+
+    def projection_terms(index):
+        object_frame = None
+        if object_contact_source is not None:
+            object_frame = {
+                "distances": object_contact_source["distances"][index],
+                "object_ids": object_contact_source["object_ids"][index],
+                "pair_vectors": object_contact_source["pair_vectors"][index],
+                "object_points": object_contact_source["retarget_points_world"][index],
+                "object_position": object_contact_source["motion_positions"][index],
+                "object_quat_wxyz": object_contact_source["motion_quats_wxyz"][index],
+            }
+        return {"source_self_contact_map": contact_self_maps[index], "object_contact_frame": object_frame,
+                "robot_object_penetration_cache": robot_object_penetration_cache}
+
+    qpos_seq = base.finalize_contact_motion(
+        args, model, data_mj, qpos_seq, contact_plan, contact_settings, terrain, robot_template,
+        selected_slot_ids, source_slot_part_ids, point_slot_costs, normal_slot_costs,
+        joint_qpos_addrs, joint_dof_addrs, joint_limits_by_qpos,
+        robot_self_penetration_cache, ground_penetration_collision_cache, fps, frame_ids, projection_terms,
+    )
 
     output_payload = {
         "qpos": qpos_seq,

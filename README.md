@@ -1,6 +1,79 @@
-<h1 align="center">
-  Unified Motion Retargeting for Humanoids with Learned Point Cloud Correspondence
-</h1>
+# Re_UMR: Contact-Stabilized Unified Motion Retargeting
+
+**Re_UMR** is Huan Hu's extension of [UMR](https://github.com/hanyang9/UMR),
+adding stance-foot stabilization, static terrain contact, reproducible contact
+measurements, and TienKung 2 Dex / 2 Pro / 3 robot adapters.
+The original learned surface correspondence and retargeting framework is by
+**Cao et al. (2026)**. Please [cite both UMR and Re_UMR](#citation) when using
+this extension. Upstream history is preserved from
+[`d6bb761`](https://github.com/hanyang9/UMR/commit/d6bb76123d19afb7c2c1c84162d1af1f142a61ed).
+
+[Installation](#installation) · [Quick start](#quick-start) ·
+[Robots](#supported-robots) · [Evidence and reproduction](docs/validation/README.md) ·
+[Contact settings](docs/contact_stabilization.md) · [Changes](CHANGELOG.md)
+
+## What Re_UMR adds
+
+| Addition | Implementation and scope |
+| --- | --- |
+| Reduce stance-foot sliding | Speed + height contact detection, hysteresis, independent sole probes, fixed targets per contact interval, and contact correction after smoothing. |
+| Preserve support across chunks | Shared final correction for single-motion, batch and Character paths; intervals span chunk boundaries. |
+| Contact with static terrain | Planes, ramps and heightfields use matching detection, constraints and saved MuJoCo scenes. Optional bounded height adaptation holds its offset during flight. |
+| Inspect and reproduce results | Per-motion contact diagnostics, matched-mask comparisons, published robot trajectories/probes, checksums and a reproduction script. |
+| Three TienKung body models | 2 Dex (31 joints), 2 Pro (30 joints), 3 (25 joints), with bundled meshes, MJCF adapters, T-poses and joint limits. |
+
+The contact design draws on
+[ccrpRepo/robot_retargeter](https://github.com/ccrpRepo/robot_retargeter/tree/f1418972319287c1b93af0f7a3b445f613cff5e4).
+It is implemented for UMR's surface-based QP solver. Robot assets come from
+[Open-X-Humanoid/TienKung_URDF](https://github.com/Open-X-Humanoid/TienKung_URDF/tree/5c221783fb92fcc4af891ef1dc0502963caf2266).
+See [attribution and modification notices](THIRD_PARTY_NOTICES.md).
+
+## Measured improvement
+
+**One controlled example, not a dataset-wide benchmark:** Unitree G1,
+`dance1_subject2`, source frames 300–599, 30 FPS, 4096 slots trained for 500 epochs,
+CPU execution. Both trajectories use identical source-derived contact masks
+and probes (1936 active samples).
+
+| Metric | Upstream UMR (our rerun) | Re_UMR |
+| --- | ---: | ---: |
+| Mean stance slip ↓ | 15.85 cm/s | **1.65 cm/s** |
+| Stance slip, P95 ↓ | 38.61 cm/s | **6.77 cm/s** |
+| Support-height error, P95 ↓ | 34.55 mm | **2.03 mm** |
+| Joint jerk, P95 ↓ | **0.0550 rad/frame³** | 0.0628 rad/frame³ |
+
+Mean stance slip decreased **89.6%**, with a **14.2% increase in joint jerk**.
+The unmodified upstream retarget script was rerun at the pinned commit; its
+`qpos` was bitwise identical to Re_UMR with stabilization disabled for this clip.
+This is our evaluation, not a benchmark reported by the original UMR authors.
+
+![Measured stance slip and support-height errors](docs/validation/g1_dance_300_599/comparison.png)
+
+[Raw metrics](docs/validation/g1_dance_300_599/comparison.json) ·
+[Inputs, environment and checksums](docs/validation/g1_dance_300_599/manifest.json) ·
+[Protocol, limitations and reproduction](docs/validation/README.md)
+
+Nineteen automated tests pass, including independent URDF forward-kinematics
+checks for the new models. Each TienKung adapter completed a 24-frame CPU
+integration run. Those reduced-training runs still exceed the 3 mm support-height
+tolerance; they establish pipeline support, not final motion quality.
+[See the TienKung reports](docs/validation/tienkung/summary.json).
+
+Contact constraints are soft and evaluated on surface samples. These results do
+not establish dynamic balance, friction feasibility, or perfect contact for all
+motions. Terrain must be supplied and the source motion must already match it;
+Re_UMR does not plan new footsteps. SMPL-X model weights remain user-provided.
+
+## Original UMR framework
+
+UMR learns ordered source–robot surface correspondence in canonical poses, then
+optimizes robot motion from matched surface positions, orientations and
+kinematic constraints. Correspondence is reused for the same source template
+and robot. SMPL-X NPZ support, GRAIL's runtime overlay, original source adapters,
+LQR smoothing and bidirectional initialization are inherited from UMR.
+
+<details>
+<summary>Original UMR paper, authors and project links</summary>
 
 <p align="center">
   Hanyang Cao<sup>1,2,*</sup>,
@@ -36,22 +109,7 @@
   <a href="https://arxiv.org/abs/2609.02134"><img src="https://img.shields.io/badge/arXiv-2609.02134-b31b1b" alt="arXiv"></a>
 </p>
 
----
-
-<p align="center">
-  <img src="teaser.png" alt="UMR teaser" width="100%">
-</p>
-
-UMR treats the moving exterior body surface as a shared interface between human
-motion and humanoid robots. It has two main stages:
-
-- **Point Cloud Correspondence Learning** learns ordered source-robot surface
-  correspondence in aligned canonical poses.
-- **Correspondence-Guided Retargeting** optimizes robot motion using matched
-  surface positions, orientations, contacts, and kinematic constraints.
-
-A learned correspondence is reused by motions with the same source template
-and target robot.
+</details>
 
 ## Supported Motion Sources
 
@@ -78,6 +136,11 @@ the expected local layout.
 ## Installation
 
 ```bash
+git clone https://github.com/BenHuHuan/Re_UMR.git
+cd Re_UMR
+git lfs install
+git lfs pull
+
 conda create -n umr python=3.12 pip -y
 conda activate umr
 python -m pip install --index-url https://download.pytorch.org/whl/cu121 torch==2.4.1
@@ -113,12 +176,51 @@ python scripts/humanoid_retarget_pipeline.py \
   --config robot_configs/humanoid_retarget_unitree_g1_example.json
 ```
 
+The first run builds/trains correspondence; later runs reuse it. For a run without
+a viewer, append `--skip-view`. On a CPU-only system, set
+`retarget.smplx_device` and `correspondence.train.device` to `cpu` in the config.
+
 The default configuration uses the included LAFAN1-derived SMPL-X sequence
 `sample_data/lafan1_smplx/dance1_subject2.npz`. It builds or reuses the learned
 point-cloud correspondence, runs correspondence-guided retargeting, and opens
 the MuJoCo viewer.
 
-To use another robot, copy the example config in `robot_configs/` and update
+Foot-contact stabilization is enabled by default: speed/height detection,
+continuous-stance anchors, and a final contact correction after trajectory
+smoothing reduce support-foot sliding. Plane/heightfield terrain and per-motion
+contact diagnostics are also available. See
+[`docs/contact_stabilization.md`](docs/contact_stabilization.md) for configuration,
+terrain coordinates, tuning and validation.
+
+## Supported Robots
+
+Ready-to-run robot configurations are included for:
+
+| Robot | Configuration |
+| --- | --- |
+| Unitree G1 | [`unitree_g1`](robot_configs/humanoid_retarget_unitree_g1_example.json) |
+| Unitree H2 | [`unitree_h2`](robot_configs/humanoid_retarget_unitree_h2_example.json) |
+| EngineAI T800 | [`engineai_t800`](robot_configs/humanoid_retarget_engineai_t800_example.json) |
+| Booster K1 | [`booster_k1`](robot_configs/humanoid_retarget_booster_k1_example.json) |
+| HighTorque PiPlusPro | [`hightorque_pipluspro`](robot_configs/humanoid_retarget_hightorque_pipluspro_example.json) |
+| MimicKit Humanoid | [`mimickit_humanoid`](robot_configs/humanoid_retarget_mimickit_humanoid_example.json) |
+| TienKung 2 Dex (31 body joints) | [`tiangong2dex`](robot_configs/humanoid_retarget_tiangong2dex_example.json) |
+| TienKung 2 Pro (30 body joints) | [`tiangong2pro`](robot_configs/humanoid_retarget_tiangong2pro_example.json) |
+| TienKung 3 (25 body joints) | [`tiangong3`](robot_configs/humanoid_retarget_tiangong3_example.json) |
+
+Select any configuration with `--config`, for example:
+
+```bash
+python scripts/humanoid_retarget_pipeline.py \
+  --config robot_configs/humanoid_retarget_tiangong3_example.json
+```
+
+TienKung models include the required meshes, floating-base MJCF adapters,
+T-poses and joint limits. See [`assets/tienkung/README.md`](assets/tienkung/README.md)
+for upstream provenance, conversion details and the scope of each body model.
+They use the same foot-contact and terrain options described above.
+
+To add another robot, copy the example config in `robot_configs/` and update
 its name and MJCF path. Prepare the robot T-pose in
 [UMR Studio](https://hanyang9.github.io/UMR/umr_studio.html): load the robot
 asset folder, select its MJCF, adjust it into a T-pose, and click **Copy T-pose
@@ -258,7 +360,11 @@ optimal for every embodiment.
 
 ## Citation
 
-If you find UMR useful in your research, please cite the paper:
+Please cite **both** the original UMR method and this software extension when
+using Re_UMR. The software citation identifies this repository; it is not a
+separate peer-reviewed paper and has no assigned DOI.
+
+**Original UMR — Cao et al.:**
 
 ```bibtex
 @misc{cao2026unifiedmotionretargetinghumanoids,
@@ -271,3 +377,28 @@ If you find UMR useful in your research, please cite the paper:
   url={https://arxiv.org/abs/2609.02134},
 }
 ```
+
+**Re_UMR — Huan Hu:**
+
+```bibtex
+@software{hu2026reumr,
+  author = {Huan Hu},
+  title = {{Re\_UMR}: Contact-Stabilized Unified Motion Retargeting},
+  year = {2026},
+  url = {https://github.com/BenHuHuan/Re_UMR},
+  note = {Software extension of UMR; cite Cao et al. (2026) for the original method}
+}
+```
+
+Machine-readable metadata: [`CITATION.cff`](CITATION.cff).
+Both BibTeX entries: [`CITATIONS.bib`](CITATIONS.bib).
+When reporting experiments, also record the exact Re_UMR commit used.
+
+## Attribution and asset terms
+
+The original UMR authors retain credit for the base framework and paper.
+Contact-design references and TienKung model provenance are documented in
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md). Existing datasets and robot
+assets retain their upstream terms; the TienKung OpenAtom license is included.
+This fork does not relicense upstream materials. SMPL-X model weights are not
+included and must be obtained from their official provider.

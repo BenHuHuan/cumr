@@ -1,0 +1,43 @@
+{
+  "settings": {
+    "enabled": true,
+    "height_enter": 0.035,
+    "height_exit": 0.055,
+    "speed_enter": 0.18,
+    "speed_exit": 0.3,
+    "speed_window_seconds": 0.067,
+    "min_contact_seconds": 0.067,
+    "blend_seconds": 0.067,
+    "points_per_foot": 6,
+    "position_cost": 100000.0,
+    "height_adaptation": false,
+    "height_filter_seconds": 0.1,
+    "height_max_correction": 0.05,
+    "projection_iters": 8,
+    "projection_pose_cost": 1.0,
+    "projection_velocity_cost": 500.0,
+    "tolerance": 0.003
+  },
+  "signature": "3a8f73cfe3bf91b80bddb4bc5ef182c40a679ee70d2cd4ad1d095a917e1ff734",
+  "terrain": {},
+  "fps": 30.0,
+  "before_projection": {
+    "contact_samples": 1936,
+    "stance_slip_mean_m_s": 0.11998742828542734,
+    "stance_slip_p95_m_s": 0.3158114958489625,
+    "anchor_error_p95_m": 0.011508052163550655,
+    "support_height_p95_m": 0.004997369794192033,
+    "max_probe_penetration_m": 0.0012015605287300536
+  },
+  "after_projection": {
+    "contact_samples": 1936,
+    "stance_slip_mean_m_s": 0.016507682558600485,
+    "stance_slip_p95_m_s": 0.0677111294726349,
+    "anchor_error_p95_m": 0.006663536280082755,
+    "support_height_p95_m": 0.0020297446975951613,
+    "max_probe_penetration_m": 3.553421185076289e-08,
+    "max_surface_slot_penetration_m": 4.114831180998535e-08
+  },
+  "tolerance_m": 0.003,
+  "support_height_within_tolerance": true
+}

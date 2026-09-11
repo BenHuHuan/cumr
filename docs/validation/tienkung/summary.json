@@ -1,0 +1,90 @@
+{
+  "scope": "Integration smoke test; 512 correspondence points, 100 CPU training epochs, 24 dance frames. Not a final motion-quality benchmark.",
+  "source_revision": "5c221783fb92fcc4af891ef1dc0502963caf2266",
+  "robots": {
+    "tiangong2dex": {
+      "joints": 31,
+      "qpos_shape": [
+        24,
+        38
+      ],
+      "finite_qpos": true,
+      "max_joint_limit_violation_rad": 0.0,
+      "contact_report": "tiangong2dex.contact.json",
+      "contact_before": {
+        "contact_samples": 202,
+        "stance_slip_mean_m_s": 0.08555030126596558,
+        "stance_slip_p95_m_s": 0.20858285073921712,
+        "anchor_error_p95_m": 0.02094221649045088,
+        "support_height_p95_m": 0.02089711944225365,
+        "max_probe_penetration_m": 0.00022257438734309826
+      },
+      "contact_after": {
+        "contact_samples": 202,
+        "stance_slip_mean_m_s": 0.006441821760707615,
+        "stance_slip_p95_m_s": 0.02079787654557957,
+        "anchor_error_p95_m": 0.02067233191499878,
+        "support_height_p95_m": 0.02067199432714714,
+        "max_probe_penetration_m": 2.4028070179371586e-08,
+        "max_surface_slot_penetration_m": 3.012278077668684e-08
+      },
+      "support_height_within_tolerance": false
+    },
+    "tiangong2pro": {
+      "joints": 30,
+      "qpos_shape": [
+        24,
+        37
+      ],
+      "finite_qpos": true,
+      "max_joint_limit_violation_rad": 0.0,
+      "contact_report": "tiangong2pro.contact.json",
+      "contact_before": {
+        "contact_samples": 243,
+        "stance_slip_mean_m_s": 0.05444062794546508,
+        "stance_slip_p95_m_s": 0.1450979097611358,
+        "anchor_error_p95_m": 0.01830884739732332,
+        "support_height_p95_m": 0.01813042954849588,
+        "max_probe_penetration_m": 0.00034786249872361535
+      },
+      "contact_after": {
+        "contact_samples": 243,
+        "stance_slip_mean_m_s": 0.007516734678454388,
+        "stance_slip_p95_m_s": 0.0275040726446848,
+        "anchor_error_p95_m": 0.01783150931109593,
+        "support_height_p95_m": 0.01781316416782685,
+        "max_probe_penetration_m": 3.3856402913839956e-08,
+        "max_surface_slot_penetration_m": 3.3856402913839956e-08
+      },
+      "support_height_within_tolerance": false
+    },
+    "tiangong3": {
+      "joints": 25,
+      "qpos_shape": [
+        24,
+        32
+      ],
+      "finite_qpos": true,
+      "max_joint_limit_violation_rad": 0.0,
+      "contact_report": "tiangong3.contact.json",
+      "contact_before": {
+        "contact_samples": 221,
+        "stance_slip_mean_m_s": 0.06331028808728184,
+        "stance_slip_p95_m_s": 0.1594626523812758,
+        "anchor_error_p95_m": 0.014733784271267546,
+        "support_height_p95_m": 0.013423707191831988,
+        "max_probe_penetration_m": 0.0004817388912706222
+      },
+      "contact_after": {
+        "contact_samples": 221,
+        "stance_slip_mean_m_s": 0.010749804130337045,
+        "stance_slip_p95_m_s": 0.03546777743592029,
+        "anchor_error_p95_m": 0.012964983844079939,
+        "support_height_p95_m": 0.012952876920762472,
+        "max_probe_penetration_m": 2.6504566024571075e-08,
+        "max_surface_slot_penetration_m": 3.523767113863818e-08
+      },
+      "support_height_within_tolerance": false
+    }
+  }
+}

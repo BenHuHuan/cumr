@@ -90,6 +90,25 @@
     "max_frames": 0
   },
   "solver": {
+    "contact_stabilization": {
+      "enabled": true,
+      "height_enter": 0.035,
+      "height_exit": 0.055,
+      "speed_enter": 0.18,
+      "speed_exit": 0.3,
+      "speed_window_seconds": 0.067,
+      "min_contact_seconds": 0.067,
+      "blend_seconds": 0.067,
+      "points_per_foot": 6,
+      "position_cost": 100000.0,
+      "height_adaptation": false,
+      "height_filter_seconds": 0.1,
+      "height_max_correction": 0.05,
+      "projection_iters": 8,
+      "projection_pose_cost": 1.0,
+      "projection_velocity_cost": 500.0,
+      "tolerance": 0.003
+    },
     "surface_normal_cost_mode": "tpose_offset",
     "body_segment": {
       "schema": "smplx_55_to_19_upper_arm_v1",

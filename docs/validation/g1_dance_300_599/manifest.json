@@ -1,0 +1,75 @@
+{
+  "date": "2026-09-11",
+  "upstream": {
+    "repository": "https://github.com/hanyang9/UMR",
+    "commit": "d6bb76123d19afb7c2c1c84162d1af1f142a61ed",
+    "rerun_qpos_bitwise_equal_to_disabled_ablation": true,
+    "max_absolute_qpos_difference": 0.0
+  },
+  "protocol": {
+    "robot": "unitree_g1",
+    "sequence": "dance1_subject2",
+    "frames_inclusive": [
+      300,
+      599
+    ],
+    "fps": 30,
+    "num_slots": 4096,
+    "training_epochs": 500,
+    "contact_samples": 1936,
+    "evaluation_mask": "Identical source-derived support mask and probe bindings for both outputs",
+    "baseline": "Our rerun of unmodified upstream retarget script using baseline_config.json and shared trained slots",
+    "stabilized": "Re_UMR with stabilized_config.json; projection_velocity_cost=500 inherited from defaults and made explicit here"
+  },
+  "environment": {
+    "python": "3.12.14",
+    "platform": "Linux-6.8.0-138-generic-x86_64-with-glibc2.35",
+    "device": "cpu",
+    "packages": {
+      "numpy": "1.26.4",
+      "scipy": "1.17.1",
+      "mujoco": "3.3.7",
+      "torch": "2.4.1+cu121",
+      "trimesh": "5.1.0",
+      "clarabel": "0.11.1",
+      "smplx": "0.1.28",
+      "embreex": "4.4.0",
+      "matplotlib": "3.10.8"
+    }
+  },
+  "inputs": {
+    "source_motion": {
+      "path": "sample_data/lafan1_smplx/dance1_subject2.npz",
+      "sha256": "5abee53b15bd34723353d67b229fdd736bbea9355eb4d68f0a9647e4dffa35b3"
+    },
+    "robot_xml": {
+      "path": "assets/g1/g1_29dof.xml",
+      "sha256": "8c586e4747da85804180fe44d8692e0fd8231356728b6327e256dca498087a78"
+    },
+    "trained_slots": {
+      "sha256": "e8b047cb3c034dd18786e69e3dbfdd4551bc22681a733f6aafc9a0408718b718",
+      "distributed": false
+    },
+    "smplx_neutral": {
+      "filename": "SMPLX_NEUTRAL.npz",
+      "sha256": "376021446ddc86e99acacd795182bbef903e61d33b76b9d8b359c2b0865bd992",
+      "distributed": false
+    }
+  },
+  "limitations": [
+    "One flat-ground dance clip; no dataset-wide or dynamic-balance claim.",
+    "Same source-derived masks evaluate both motions; no external contact ground truth.",
+    "Joint jerk uses rad/frame^3 and increases about 14%.",
+    "Penetration is measured at sampled surface slots, not the entire continuous mesh."
+  ],
+  "files": {
+    "baseline.npz": "de39dbeb184356260610084b86dfa173c03915f6012a3b1b5e403acb1df73628",
+    "baseline_config.json": "d31b876afde60de890a90570a696688bcbc13c837bb7703a85ee3dd1ac12d458",
+    "comparison.json": "bacc3aac88cbc19683e0311918eeaef5a899c23f6afeb73d0e94b72149b4ae95",
+    "comparison.png": "5dc2822b1fbb900078058e3450798a8205483ac45c0807112114889aa465e74d",
+    "stabilized.contact.json": "51bfbd315528a98ed752f24c8befbfe9792c476bbebcc9be98ac01dc48c48173",
+    "stabilized.contact.npz": "427b64b7c376a5cafdcae383de6c680e373d348e17ad6a79afb7c860a442da6d",
+    "stabilized.npz": "a20755527639781a41da8d04c4715c6f76f25e2cd78e108244afa8582db343c2",
+    "stabilized_config.json": "85139e62d65c8694890f9c15f1654ba0080be19140fc90900207d5b904b096a8"
+  }
+}

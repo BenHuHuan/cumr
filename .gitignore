@@ -9,6 +9,7 @@ venv/
 
 # Generated UMR artifacts
 output/
+data/correspondence_*.npz
 visualizations/
 deploy/
 *.floating_mjcf.xml
