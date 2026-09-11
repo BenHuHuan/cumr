@@ -2,7 +2,7 @@
 
 ## Original UMR
 
-CUMR derives from [hanyang9/UMR](https://github.com/hanyang9/UMR) at
+CUMR is an independently maintained fork of [hanyang9/UMR](https://github.com/hanyang9/UMR) at
 [`d6bb76123d19afb7c2c1c84162d1af1f142a61ed`](https://github.com/hanyang9/UMR/tree/d6bb76123d19afb7c2c1c84162d1af1f142a61ed).
 The original Git history is retained. The learned surface correspondence,
 retargeting framework, original adapters, robot configurations, datasets and
@@ -29,7 +29,10 @@ the associated documentation. See [CHANGELOG.md](CHANGELOG.md) and the preserved
 Git diff/history for the exact modified files.
 
 The original UMR authors are not presented as authors of this extension or as
-endorsing its evaluation. Our software citation is separate from the UMR paper.
+endorsing its evaluation. Our software citation is separate from the UMR paper
+and covers the fork-specific modifications. GitHub lists commit contributors
+from retained history; this is not a list of this fork's maintainers or a claim
+that upstream authors participated in the modifications.
 
 ## Development-rule reference
 

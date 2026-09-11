@@ -1,12 +1,15 @@
 # CUMR: Contact-Stabilized Unified Motion Retargeting
 
-**CUMR** is an extension of [UMR](https://github.com/hanyang9/UMR),
-adding stance-foot stabilization, static terrain contact, reproducible contact
-measurements, and TienKung 2 Dex / 2 Pro / 3 robot adapters.
-The original learned surface correspondence and retargeting framework is by
-**Cao et al. (2026)**. Please [cite both UMR and CUMR](#citation) when using
-this extension. Upstream history is preserved from
-[`d6bb761`](https://github.com/hanyang9/UMR/commit/d6bb76123d19afb7c2c1c84162d1af1f142a61ed).
+**CUMR** is an independently maintained **fork of
+[UMR](https://github.com/hanyang9/UMR)**, with additional stance-foot
+stabilization, static terrain contact, reproducible contact measurements, and
+TienKung 2 Dex / 2 Pro / 3 robot adapters.
+
+The base framework and original method belong to the upstream UMR authors.
+This fork's modifications and evaluations are maintained separately; upstream
+attribution does not imply participation in or endorsement of CUMR.
+See [upstream attribution](#upstream-attribution-and-maintenance) and
+[the separate UMR and CUMR citations](#citation).
 
 [Installation](#installation) · [Quick start](#quick-start) ·
 [Robots](#supported-robots) · [Evidence and reproduction](docs/validation/README.md) ·
@@ -73,44 +76,10 @@ kinematic constraints. Correspondence is reused for the same source template
 and robot. SMPL-X NPZ support, GRAIL's runtime overlay, original source adapters,
 LQR smoothing and bidirectional initialization are inherited from UMR.
 
-<details>
-<summary>Original UMR paper, authors and project links</summary>
-
-<p align="center">
-  Hanyang Cao<sup>1,2,*</sup>,
-  Yuetong Fang<sup>1,2,*</sup>,
-  Taesoo Kwon<sup>3,*</sup>,
-  Runyi Yu<sup>2,4</sup>,
-  Ji Ma<sup>5</sup>,
-  Jing Tan<sup>1,2</sup>,<br>
-  Yangchen Zhou<sup>1</sup>,
-  Baoze Du<sup>2</sup>,
-  Yi Gu<sup>1</sup>,
-  Yukang Gao<sup>1,2</sup>,
-  Ruoli Dai<sup>2</sup>,
-  Lei Han<sup>2,†</sup>,
-  Renjing Xu<sup>1,†</sup>
-</p>
-
-<p align="center">
-  <sup>1</sup>HKUST (Guangzhou)&nbsp;&nbsp;
-  <sup>2</sup>Noitom Robotics&nbsp;&nbsp;
-  <sup>3</sup>Hanyang University&nbsp;&nbsp;
-  <sup>4</sup>HKUST&nbsp;&nbsp;
-  <sup>5</sup>HKU
-</p>
-
-<p align="center">
-  <sup>*</sup>Equal contribution&nbsp;&nbsp;&nbsp;
-  <sup>†</sup>Corresponding authors
-</p>
-
-<p align="center">
-  <a href="https://hanyang9.github.io/UMR/"><img src="https://img.shields.io/badge/Project-Page-2ea44f" alt="Project Page"></a>
-  <a href="https://arxiv.org/abs/2609.02134"><img src="https://img.shields.io/badge/arXiv-2609.02134-b31b1b" alt="arXiv"></a>
-</p>
-
-</details>
+Original UMR: [repository](https://github.com/hanyang9/UMR) ·
+[project page](https://hanyang9.github.io/UMR/) ·
+[paper by Cao et al. (2026)](https://arxiv.org/abs/2609.02134).
+The full paper author list is retained in the [citation](#citation).
 
 ## Supported Motion Sources
 
@@ -361,9 +330,10 @@ optimal for every embodiment.
 
 ## Citation
 
-Please cite **both** the original UMR method and this software extension when
-using CUMR. The software citation identifies this repository; it is not a
-separate peer-reviewed paper and has no assigned DOI.
+Please cite the original UMR paper for the base method. When using the changes
+in this fork, also cite CUMR to identify the software version used. The CUMR
+software citation covers the fork-specific modifications; it is not a separate
+peer-reviewed paper and has no assigned DOI.
 
 **Original UMR — Cao et al.:**
 
@@ -379,7 +349,7 @@ separate peer-reviewed paper and has no assigned DOI.
 }
 ```
 
-**CUMR — Huan Hu:**
+**CUMR fork modifications — Huan Hu:**
 
 ```bibtex
 @software{hu2026cumr,
@@ -387,13 +357,26 @@ separate peer-reviewed paper and has no assigned DOI.
   title = {{CUMR}: Contact-Stabilized Unified Motion Retargeting},
   year = {2026},
   url = {https://github.com/BenHuHuan/cumr},
-  note = {Software extension of UMR; cite Cao et al. (2026) for the original method}
+  note = {Independently maintained fork of UMR; citation covers fork-specific modifications; cite Cao et al. (2026) for the original method}
 }
 ```
 
 Machine-readable metadata: [`CITATION.cff`](CITATION.cff).
 Both BibTeX entries: [`CITATIONS.bib`](CITATIONS.bib).
 When reporting experiments, also record the exact CUMR commit used.
+
+## Upstream attribution and maintenance
+
+- **Upstream:** [hanyang9/UMR](https://github.com/hanyang9/UMR), based on
+  [`d6bb761`](https://github.com/hanyang9/UMR/commit/d6bb76123d19afb7c2c1c84162d1af1f142a61ed).
+  Its authors receive credit for the original method, code and paper.
+- **This fork:** maintained by [Huan Hu / BenHuHuan](https://github.com/BenHuHuan).
+  [CHANGELOG.md](CHANGELOG.md) identifies the added work and its measured limits.
+
+GitHub's [Contributors display](https://docs.github.com/en/repositories/viewing-activity-and-data-for-your-repository/viewing-a-projects-contributors)
+reflects commit authorship, including retained upstream history. It is not a
+CUMR team roster and does not establish that an upstream author contributed to
+this fork's changes, maintains this fork or endorses its results.
 
 ## Attribution and asset terms
 

@@ -13,8 +13,10 @@ date-released: 2026-09-11
 repository-code: https://github.com/BenHuHuan/cumr
 url: https://github.com/BenHuHuan/cumr
 abstract: >-
-  A software extension of UMR with stance-foot stabilization, static terrain
-  contact, reproducible contact diagnostics and TienKung robot adapters.
+  An independently maintained fork of UMR with stance-foot stabilization,
+  static terrain contact, reproducible contact diagnostics and TienKung robot
+  adapters. This software citation covers the fork-specific modifications;
+  original UMR authorship is recorded separately in references.
 keywords:
   - humanoid robotics
   - motion retargeting

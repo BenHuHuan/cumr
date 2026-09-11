@@ -1,5 +1,13 @@
 # Changes from upstream UMR
 
+## 2026-09-11 — Fork attribution clarification
+
+- Identify CUMR explicitly as an independently maintained UMR fork. Separate
+  upstream authorship, fork maintenance and GitHub commit-contributor statistics.
+- Replace the upstream author/affiliation presentation in the README with
+  source links; retain the complete original paper citation. Clarify that the
+  CUMR software citation covers the fork-specific modifications.
+
 ## 2026-09-11 — CUMR naming and architecture contracts
 
 - Standardize the extension name and software citation on CUMR, with repository
