@@ -1,6 +1,18 @@
 # Changes from upstream UMR
 
-## 2026-09-11 — Initial Re_UMR publication
+## 2026-09-11 — CUMR naming and architecture contracts
+
+- Standardize the extension name and software citation on CUMR, with repository
+  URL `https://github.com/BenHuHuan/cumr`. Preserve original UMR attribution,
+  public script/config identifiers and measured numerical artifacts.
+- Add canonical AGENTS.md plus generated AGENT, GLM, KIMI, CLAUDE, CODEX and GROK
+  guides, with drift detection.
+- Adapt UniLab's owner/contract/ADR development organization to CUMR; add eight
+  mandatory contracts, an owner map, contributing rules and ADR records.
+- Add executable import/call-site/artifact guards, six regression tests for the
+  guard and public outputs, Make targets and CI enforcement.
+
+## 2026-09-11 — Initial CUMR publication
 
 Based on upstream UMR `d6bb76123d19afb7c2c1c84162d1af1f142a61ed`.
 
@@ -29,7 +41,7 @@ Based on upstream UMR `d6bb76123d19afb7c2c1c84162d1af1f142a61ed`.
 - Publish TienKung integration reports, including unresolved support-height errors
   from the reduced-training smoke runs.
 - Add 19 automated tests, a metric replay/full-run script, README attribution,
-  original UMR citation and separate Re_UMR software citation for Huan Hu.
+  original UMR citation and separate CUMR software citation for Huan Hu.
 
 ### Inherited capabilities
 

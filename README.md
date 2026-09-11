@@ -1,18 +1,19 @@
-# Re_UMR: Contact-Stabilized Unified Motion Retargeting
+# CUMR: Contact-Stabilized Unified Motion Retargeting
 
-**Re_UMR** is one of extension of [UMR](https://github.com/hanyang9/UMR),
+**CUMR** is an extension of [UMR](https://github.com/hanyang9/UMR),
 adding stance-foot stabilization, static terrain contact, reproducible contact
 measurements, and TienKung 2 Dex / 2 Pro / 3 robot adapters.
 The original learned surface correspondence and retargeting framework is by
-**Cao et al. (2026)**. Please [cite both UMR and Re_UMR](#citation) when using
+**Cao et al. (2026)**. Please [cite both UMR and CUMR](#citation) when using
 this extension. Upstream history is preserved from
 [`d6bb761`](https://github.com/hanyang9/UMR/commit/d6bb76123d19afb7c2c1c84162d1af1f142a61ed).
 
 [Installation](#installation) · [Quick start](#quick-start) ·
 [Robots](#supported-robots) · [Evidence and reproduction](docs/validation/README.md) ·
-[Contact settings](docs/contact_stabilization.md) · [Changes](CHANGELOG.md)
+[Contact settings](docs/contact_stabilization.md) · [Changes](CHANGELOG.md) ·
+[Contributing](CONTRIBUTING.md) · [Architecture contracts](ARCHITECTURE.md)
 
-## What Re_UMR adds
+## What CUMR adds
 
 | Addition | Implementation and scope |
 | --- | --- |
@@ -35,7 +36,7 @@ See [attribution and modification notices](THIRD_PARTY_NOTICES.md).
 CPU execution. Both trajectories use identical source-derived contact masks
 and probes (1936 active samples).
 
-| Metric | Upstream UMR (our rerun) | Re_UMR |
+| Metric | Upstream UMR (our rerun) | CUMR |
 | --- | ---: | ---: |
 | Mean stance slip ↓ | 15.85 cm/s | **1.65 cm/s** |
 | Stance slip, P95 ↓ | 38.61 cm/s | **6.77 cm/s** |
@@ -44,7 +45,7 @@ and probes (1936 active samples).
 
 Mean stance slip decreased **89.6%**, with a **14.2% increase in joint jerk**.
 The unmodified upstream retarget script was rerun at the pinned commit; its
-`qpos` was bitwise identical to Re_UMR with stabilization disabled for this clip.
+`qpos` was bitwise identical to CUMR with stabilization disabled for this clip.
 This is our evaluation, not a benchmark reported by the original UMR authors.
 
 ![Measured stance slip and support-height errors](docs/validation/g1_dance_300_599/comparison.png)
@@ -53,8 +54,8 @@ This is our evaluation, not a benchmark reported by the original UMR authors.
 [Inputs, environment and checksums](docs/validation/g1_dance_300_599/manifest.json) ·
 [Protocol, limitations and reproduction](docs/validation/README.md)
 
-Nineteen automated tests pass, including independent URDF forward-kinematics
-checks for the new models. Each TienKung adapter completed a 24-frame CPU
+The numerical regression suite includes 19 tests, with independent URDF
+forward-kinematics checks for the new models. Each TienKung adapter completed a 24-frame CPU
 integration run. Those reduced-training runs still exceed the 3 mm support-height
 tolerance; they establish pipeline support, not final motion quality.
 [See the TienKung reports](docs/validation/tienkung/summary.json).
@@ -62,7 +63,7 @@ tolerance; they establish pipeline support, not final motion quality.
 Contact constraints are soft and evaluated on surface samples. These results do
 not establish dynamic balance, friction feasibility, or perfect contact for all
 motions. Terrain must be supplied and the source motion must already match it;
-Re_UMR does not plan new footsteps. SMPL-X model weights remain user-provided.
+CUMR does not plan new footsteps. SMPL-X model weights remain user-provided.
 
 ## Original UMR framework
 
@@ -136,8 +137,8 @@ the expected local layout.
 ## Installation
 
 ```bash
-git clone https://github.com/BenHuHuan/Re_UMR.git
-cd Re_UMR
+git clone https://github.com/BenHuHuan/cumr.git
+cd cumr
 git lfs install
 git lfs pull
 
@@ -361,7 +362,7 @@ optimal for every embodiment.
 ## Citation
 
 Please cite **both** the original UMR method and this software extension when
-using Re_UMR. The software citation identifies this repository; it is not a
+using CUMR. The software citation identifies this repository; it is not a
 separate peer-reviewed paper and has no assigned DOI.
 
 **Original UMR — Cao et al.:**
@@ -378,21 +379,21 @@ separate peer-reviewed paper and has no assigned DOI.
 }
 ```
 
-**Re_UMR — Huan Hu:**
+**CUMR — Huan Hu:**
 
 ```bibtex
-@software{hu2026reumr,
+@software{hu2026cumr,
   author = {Huan Hu},
-  title = {{Re\_UMR}: Contact-Stabilized Unified Motion Retargeting},
+  title = {{CUMR}: Contact-Stabilized Unified Motion Retargeting},
   year = {2026},
-  url = {https://github.com/BenHuHuan/Re_UMR},
+  url = {https://github.com/BenHuHuan/cumr},
   note = {Software extension of UMR; cite Cao et al. (2026) for the original method}
 }
 ```
 
 Machine-readable metadata: [`CITATION.cff`](CITATION.cff).
 Both BibTeX entries: [`CITATIONS.bib`](CITATIONS.bib).
-When reporting experiments, also record the exact Re_UMR commit used.
+When reporting experiments, also record the exact CUMR commit used.
 
 ## Attribution and asset terms
 
@@ -402,3 +403,26 @@ Contact-design references and TienKung model provenance are documented in
 assets retain their upstream terms; the TienKung OpenAtom license is included.
 This fork does not relicense upstream materials. SMPL-X model weights are not
 included and must be obtained from their official provider.
+
+## Development rules and agent guides
+
+Start with [CONTRIBUTING.md](CONTRIBUTING.md), [ARCHITECTURE.md](ARCHITECTURE.md)
+and the [mandatory C01–C08 contracts](docs/architecture/CONTRACTS.md).
+The organization draws on [UniLab's development standards](docs/development/unilab_reference.md),
+adapted to CUMR's existing code, configuration and asset ownership.
+
+[AGENTS.md](AGENTS.md) is the canonical guide. Generated entrypoints are provided
+for [GLM](GLM.md), [Kimi](KIMI.md), [Claude](CLAUDE.md), [Codex](CODEX.md),
+[Grok](GROK.md) and [AGENT.md](AGENT.md) compatibility. If a client does not load
+its named file automatically, supply it or AGENTS.md explicitly as project context.
+
+```bash
+make agents    # regenerate guides after editing AGENTS.md
+make check     # architecture/import rules, guide drift, docs and artifact guards
+make test-all  # checks, regression tests and frozen-evidence replay
+```
+
+Contract changes use [architecture decision records](docs/adr/README.md).
+CI checks declared dependency boundaries, shared contact integration, guide
+consistency and evidence integrity. Numerical tests and review cover behavior
+that a static architecture check cannot prove.

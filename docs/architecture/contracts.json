@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "python_boundaries": {
+    "scripts/contact_stabilization.py": {"allowed_external_roots": ["numpy"]},
+    "scripts/contact_terrain.py": {"allowed_external_roots": ["numpy", "mujoco"]},
+    "scripts/humanoid_retarget_config.py": {"allowed_external_roots": ["yaml"]},
+    "scripts/smplx_model_loader.py": {"allowed_external_roots": ["numpy", "torch", "smplx"]},
+    "scripts/mujoco_geom_surface.py": {"allowed_external_roots": ["numpy", "mujoco"]}
+  },
+  "shared_contact_callers": [
+    "scripts/retarget_smpl_to_humanoid_surface_vector.py",
+    "scripts/retarget_smpl_to_humanoid_surface_vector_batch.py",
+    "scripts/retarget_character_to_humanoid_surface_vector.py"
+  ],
+  "required_documents": [
+    "AGENTS.md", "ARCHITECTURE.md", "CONTRIBUTING.md", "README.md",
+    "CITATION.cff", "CITATIONS.bib", "THIRD_PARTY_NOTICES.md",
+    "docs/architecture/CONTRACTS.md", "docs/development/unilab_reference.md",
+    "docs/adr/README.md", "docs/adr/0001-owner-boundaries.md",
+    "docs/adr/0002-artifacts-and-evidence.md", "docs/adr/TEMPLATE.md"
+  ],
+  "protected_git_patterns": [
+    "smpl/*.pkl", "smpl/*.npz", "smpl/*.zip",
+    "output/*", "*.floating_mjcf.xml", "*.log", "*.bak", "*.tmp", "*.orig"
+  ],
+  "frozen_evidence_manifest": "docs/validation/g1_dance_300_599/manifest.json",
+  "robot_output_required_fields": [
+    "qpos", "fps", "frame_ids", "robot_xml", "robot_name", "robot_joint_names",
+    "source_data", "source_sequence_key", "source_format"
+  ]
+}

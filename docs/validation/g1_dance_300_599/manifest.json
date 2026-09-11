@@ -19,7 +19,7 @@
     "contact_samples": 1936,
     "evaluation_mask": "Identical source-derived support mask and probe bindings for both outputs",
     "baseline": "Our rerun of unmodified upstream retarget script using baseline_config.json and shared trained slots",
-    "stabilized": "Re_UMR with stabilized_config.json; projection_velocity_cost=500 inherited from defaults and made explicit here"
+    "stabilized": "CUMR with stabilized_config.json; projection_velocity_cost=500 inherited from defaults and made explicit here"
   },
   "environment": {
     "python": "3.12.14",

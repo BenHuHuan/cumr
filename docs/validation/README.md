@@ -1,8 +1,8 @@
 # Validation evidence and reproduction
 
-The evidence here reports our experiments on Re_UMR. It is not a benchmark
+The evidence here reports our experiments on CUMR. It is not a benchmark
 published by the original UMR authors. See the
-[original UMR paper and Re_UMR citations](../../README.md#citation).
+[original UMR paper and CUMR citations](../../README.md#citation).
 
 ## G1: controlled 300-frame comparison
 
@@ -14,16 +14,16 @@ published by the original UMR authors. See the
 - Baseline: our rerun of the unmodified upstream retarget script at
   [`d6bb761`](https://github.com/hanyang9/UMR/tree/d6bb76123d19afb7c2c1c84162d1af1f142a61ed),
   with the supplied baseline configuration and the same correspondence.
-  This produced `qpos` bitwise identical to the contact-disabled Re_UMR
+  This produced `qpos` bitwise identical to the contact-disabled CUMR
   ablation on the same machine. No baseline retuning was performed.
-- Re_UMR: contact enabled, `position_cost=100000`, eight final correction
+- CUMR: contact enabled, `position_cost=100000`, eight final correction
   iterations and `projection_velocity_cost=500`. LQR smoothing is used in
   both runs. Complete effective configurations are included below.
 - Evaluation: both outputs are measured with **the same** source-derived
   contact mask and robot probe bindings, containing 1936 active samples.
   Probes are selected independently of the resulting trajectory errors.
 
-| Metric | Upstream UMR rerun | Re_UMR |
+| Metric | Upstream UMR rerun | CUMR |
 | --- | ---: | ---: |
 | Mean stance slip (m/s) | 0.1585263 | 0.0165077 |
 | Stance slip P95 (m/s) | 0.3861275 | 0.0677111 |
@@ -51,7 +51,7 @@ Files:
   probe bindings, targets, and pre/post-correction trajectories.
 - [stabilized.contact.json](g1_dance_300_599/stabilized.contact.json): effective
   settings and metrics immediately before/after the final correction. Its
-  pre-correction values are **not** the upstream baseline: the initial Re_UMR
+  pre-correction values are **not** the upstream baseline: the initial CUMR
   solve already includes contact terms.
 
 The model/source hashes and trained-slot hash identify the original run. Model
@@ -109,7 +109,7 @@ python scripts/reproduce_contact_validation.py --run \
 An existing compatible checkpoint can be selected with `--slots PATH`; the
 script still reruns both retargeting paths. The optional upstream run writes
 `upstream_check.json` comparing its `qpos` with the disabled ablation. It uses
-the same licensed model, data and slots as Re_UMR.
+the same licensed model, data and slots as CUMR.
 
 ## What the metrics mean
 

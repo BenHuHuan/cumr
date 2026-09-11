@@ -3,15 +3,15 @@ message: >-
   Please cite this software and the original UMR paper listed in references.
   See CITATIONS.bib for both entries and record the commit used in experiments.
 type: software
-title: "Re_UMR: Contact-Stabilized Unified Motion Retargeting"
+title: "CUMR: Contact-Stabilized Unified Motion Retargeting"
 authors:
   - family-names: Hu
     given-names: Huan
     alias: BenHuHuan
     website: https://github.com/BenHuHuan
 date-released: 2026-09-11
-repository-code: https://github.com/BenHuHuan/Re_UMR
-url: https://github.com/BenHuHuan/Re_UMR
+repository-code: https://github.com/BenHuHuan/cumr
+url: https://github.com/BenHuHuan/cumr
 abstract: >-
   A software extension of UMR with stance-foot stabilization, static terrain
   contact, reproducible contact diagnostics and TienKung robot adapters.

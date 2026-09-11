@@ -2,12 +2,12 @@
 
 ## Original UMR
 
-Re_UMR derives from [hanyang9/UMR](https://github.com/hanyang9/UMR) at
+CUMR derives from [hanyang9/UMR](https://github.com/hanyang9/UMR) at
 [`d6bb76123d19afb7c2c1c84162d1af1f142a61ed`](https://github.com/hanyang9/UMR/tree/d6bb76123d19afb7c2c1c84162d1af1f142a61ed).
 The original Git history is retained. The learned surface correspondence,
 retargeting framework, original adapters, robot configurations, datasets and
 viewer are the upstream authors' work. In particular, SMPL-X NPZ support and the
-GRAIL runtime overlay predate this fork and are not Re_UMR contributions.
+GRAIL runtime overlay predate this fork and are not CUMR contributions.
 
 Original paper: Hanyang Cao, Yuetong Fang, Taesoo Kwon, Runyi Yu, Ji Ma, Jing Tan,
 Yangchen Zhou, Baoze Du, Yi Gu, Yukang Gao, Ruoli Dai, Lei Han and Renjing Xu,
@@ -15,11 +15,11 @@ Yangchen Zhou, Baoze Du, Yi Gu, Yukang Gao, Ruoli Dai, Lei Han and Renjing Xu,
 Correspondence*, 2026, [arXiv:2609.02134](https://arxiv.org/abs/2609.02134).
 Please retain this citation when using the original method.
 
-The pinned upstream snapshot has no repository-wide license file. Re_UMR does
+The pinned upstream snapshot has no repository-wide license file. CUMR does
 not assign a new blanket license to those materials. Existing notices and
 provider-specific terms continue to apply.
 
-## Re_UMR modifications
+## CUMR modifications
 
 Maintainer: **Huan Hu** ([BenHuHuan](https://github.com/BenHuHuan)).
 The 2026-09-11 changes add `contact_stabilization.py`, `contact_terrain.py`,
@@ -31,13 +31,23 @@ Git diff/history for the exact modified files.
 The original UMR authors are not presented as authors of this extension or as
 endorsing its evaluation. Our software citation is separate from the UMR paper.
 
+## Development-rule reference
+
+Development-rule organization also draws on
+[BenHuHuan/UniLab](https://github.com/BenHuHuan/UniLab) at
+[`9e3bb6b814d694d52bfff0f074d0a2b8ede6f032`](https://github.com/BenHuHuan/UniLab/tree/9e3bb6b814d694d52bfff0f074d0a2b8ede6f032).
+Its owner boundaries, config ownership and ADR workflow informed CUMR's
+independently written governance documents. No UniLab runtime code is added.
+The [reference map](docs/development/unilab_reference.md) links the specific
+documents and explains which principles were retained.
+
 ## Contact-design reference
 
 [ccrpRepo/robot_retargeter](https://github.com/ccrpRepo/robot_retargeter), inspected
 at [`f1418972319287c1b93af0f7a3b445f613cff5e4`](https://github.com/ccrpRepo/robot_retargeter/tree/f1418972319287c1b93af0f7a3b445f613cff5e4),
 describes combined speed/height contact gates, front/rear foot probes,
 interval-mean fixed contact targets, and filtered support-height correction.
-Those ideas informed this implementation. Re_UMR implements them in UMR's
+Those ideas informed this implementation. CUMR implements them in UMR's
 surface correspondence/QP formulation and adds hysteresis, independent surface
 probes, terrain queries and a correction after smoothing. The reference
 repository's skeleton IK pipeline and per-bone/two-bone reconstruction are not
@@ -51,7 +61,7 @@ revision [`5c221783fb92fcc4af891ef1dc0502963caf2266`](https://github.com/Open-X-
 Their [OpenAtom Open Hardware License 1.0](assets/tienkung/LICENSE) is reproduced
 unchanged. Original attribution belongs to Open-X-Humanoid and its contributors.
 
-**UMR adaptations modify the model descriptions and two meshes.** Original
+**CUMR adaptations modify the model descriptions and two meshes.** Original
 URDFs, native MJCF sources and STLs are preserved. The generated `model.xml`
 adapters and two OBJ conversions carry the modifications detailed in
 [assets/tienkung/README.md](assets/tienkung/README.md), including pelvis inertia,
@@ -60,7 +70,7 @@ limit reconciliation, floating roots, ground alignment and STL-to-OBJ conversion
 ## Body models, other assets and evidence
 
 SMPL-X body-model weights require obtaining the provider's models under its
-terms and are not distributed. Re_UMR does not publish the locally installed
+terms and are not distributed. CUMR does not publish the locally installed
 weights or baked GRAIL weights. The original sample-data guides identify the
 source datasets. Existing robot assets and bundled third-party code retain
 their upstream attribution and terms, including the bundled Three.js license.

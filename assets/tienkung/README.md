@@ -1,13 +1,13 @@
-# TienKung models for UMR
+# TienKung models for CUMR
 
 These assets come from [Open-X-Humanoid/TienKung_URDF](https://github.com/Open-X-Humanoid/TienKung_URDF)
 at revision [`5c221783fb92fcc4af891ef1dc0502963caf2266`](https://github.com/Open-X-Humanoid/TienKung_URDF/tree/5c221783fb92fcc4af891ef1dc0502963caf2266),
-imported on 2026-09-11. Upstream names use `tiangong`; UMR uses those same
+imported on 2026-09-11. Upstream names use `tiangong`; CUMR uses those same
 identifiers. The meshes and original model descriptions are covered by the
 upstream [OpenAtom Open Hardware License 1.0](LICENSE), reproduced unchanged.
 Original attribution belongs to Open-X-Humanoid and the upstream contributors.
 
-| Robot | UMR identifier | Actuated body joints | Original description |
+| Robot | CUMR identifier | Actuated body joints | Original description |
 | --- | --- | ---: | --- |
 | TienKung 2 Dex | `tiangong2dex` | 31 | `tiangong2dex_urdf/tiangong2dex_torq.xml` and `urdf/tiangong2dex.urdf` |
 | TienKung 2 Pro | `tiangong2pro` | 30 | `tiangong2pro_urdf/tiangong2pro_torq.xml` and `urdf/tiangong2.0_pro_urdf.urdf` |
@@ -18,9 +18,9 @@ These configurations target the upstream body models. Separate articulated
 hand variants are not included; the Dex name does not imply finger DOFs.
 TienKung 3's supplied URDF has four joints per arm, without wrist joints.
 
-## UMR modifications
+## CUMR modifications
 
-**The `model.xml` files and two OBJ meshes are UMR adaptations, not unchanged
+**The `model.xml` files and two OBJ meshes are CUMR adaptations, not unchanged
 upstream releases.** Original URDFs, 2-series `source.xml`, and STL meshes are
 preserved alongside the adapters. Only meshes referenced by these body models
 are included.
@@ -30,7 +30,7 @@ are included.
   full inertia tensor from the corresponding URDF, avoiding mass inferred
   from overlapping visual and collision meshes.
 - Intersect the 2-series MJCF and URDF position limits. Several Dex MJCF
-  limits extend beyond its URDF limits; UMR respects the narrower interval.
+  limits extend beyond its URDF limits; CUMR respects the narrower interval.
 - Convert TienKung 3's URDF with MuJoCo 3.3.7, retaining visual geometry,
   collision geometry, fixed sensor links, joint axes, limits and inertias.
   Add a floating pelvis, floor, named visual/collision groups and torque

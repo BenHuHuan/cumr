@@ -1,4 +1,4 @@
-name: Contact and robot validation
+name: CUMR architecture, contact and robot validation
 
 on:
   push:
@@ -17,6 +17,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Architecture contracts and synchronized model guides
+        run: python scripts/check_architecture_contracts.py
       - name: Install CPU validation dependencies
         run: |
           python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.4.1
